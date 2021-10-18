@@ -114,6 +114,7 @@ private fun TypeMirror.asSafeTypeName(): TypeName {
   return asTypeName().copy(nullable = false).normalize()
 }
 
+@Suppress("ComplexMethod")
 private fun TypeName.normalize(): TypeName {
   return when (this) {
     is ClassName -> {
@@ -166,13 +167,14 @@ public class AutoValueToKotlinConverter : AutoValueExtension() {
     return withDocsFrom(e) { parseDocs() }
   }
 
+  @Suppress("ReturnCount")
   private fun Element.parseDocs(): String? {
     val doc = elements.getDocComment(this)?.trim() ?: return null
     if (doc.isBlank()) return null
     return cleanUpDoc(doc)
   }
 
-  @Suppress("DEPRECATION", "LongMethod")
+  @Suppress("DEPRECATION", "LongMethod", "ComplexMethod", "NestedBlockDepth", "ReturnCount")
   override fun generateClass(
     context: Context,
     className: String,
@@ -318,7 +320,8 @@ public class AutoValueToKotlinConverter : AutoValueExtension() {
             )
             .build()
         }
-      // Note we don't use context.propertyTypes() here because it doesn't contain nullability info, which we did capture
+      // Note we don't use context.propertyTypes() here because it doesn't contain nullability
+      // info, which we did capture
       val propertyTypes = properties.mapValues { it.value.type }
       avkBuilder = Companion.from(builder, propertyTypes) { parseDocs() }
 
@@ -681,7 +684,11 @@ public class AutoValueToKotlinConverter : AutoValueExtension() {
         return AvkBuilder(
           name = builderContext.builderType().simpleName.toString(),
           doc = builderContext.builderType().parseDocs(),
-          visibility = if (Modifier.PUBLIC in builderContext.builderType().modifiers) KModifier.PUBLIC else KModifier.INTERNAL,
+          visibility = if (Modifier.PUBLIC in builderContext.builderType().modifiers) {
+            KModifier.PUBLIC
+          } else {
+            KModifier.INTERNAL
+          },
           builderProps = props,
           buildFun = builderContext.buildMethod()
             .map {
@@ -721,7 +728,7 @@ public class AutoValueToKotlinConverter : AutoValueExtension() {
     val redactedClassName: ClassName?,
     val staticConstants: List<PropertySpec>,
   ) {
-    @Suppress("LongMethod")
+    @Suppress("LongMethod", "ComplexMethod")
     @OptIn(ExperimentalPathApi::class)
     fun writeTo(dir: String, messager: Messager) {
       val typeBuilder = TypeSpec.classBuilder(name)
@@ -933,7 +940,9 @@ private fun TypeName.defaultPrimitiveValue(): CodeBlock =
     FLOAT -> CodeBlock.of("0f")
     LONG -> CodeBlock.of("0L")
     DOUBLE -> CodeBlock.of("0.0")
-    UNIT, Void::class.asTypeName(), NOTHING -> throw IllegalStateException("Parameter with void, Unit, or Nothing type is illegal")
+    UNIT, Void::class.asTypeName(), NOTHING -> {
+      throw IllegalStateException("Parameter with void, Unit, or Nothing type is illegal")
+    }
     else -> CodeBlock.of("null")
   }
 
