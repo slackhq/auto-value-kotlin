@@ -1,0 +1,39 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Generate cache key
+        run: ./.github/workflows/checksum.sh checksum.txt
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('checksum.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - name: Configure JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Test
+        run: ./gradlew build check
+
+      - name: Publish (default branch only)
+        if: github.repository == 'slackhq/auto-value-kotlin' && github.ref == 'refs/heads/main'
+        run: ./gradlew publishAllPublicationsToMavenCentralRepository -PmavenCentralUsername=${{ secrets.SONATYPEUSERNAME }} -PmavenCentralPassword=${{ secrets.SONATYPEPASSWORD }}
