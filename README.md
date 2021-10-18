@@ -1,9 +1,9 @@
 AutoValue Kotlin
 ================
 
-auto-value-kotlin (AVK) is an [AutoValue](https://github.com/google/auto) extension that generates 
-binary-and-source-compatible, equivalent Kotlin `data` classes. This is intended to help migrations 
-by doing 95% of the work and just letting the developer come through and clean up the generated file 
+auto-value-kotlin (AVK) is an [AutoValue](https://github.com/google/auto) extension that generates
+binary-and-source-compatible, equivalent Kotlin `data` classes. This is intended to help migrations
+by doing 95% of the work and just letting the developer come through and clean up the generated file
 as-needed.
 
 The intended use of this project is to ease migration from AutoValue classes to Kotlin data classes
@@ -28,17 +28,17 @@ Configure the following arguments in your build file
 ```kotlin
 kapt {
   arguments {
-    // Source dir to output files to. This should usually be the src/main/java or src/main/kotlin 
+    // Source dir to output files to. This should usually be the src/main/java or src/main/kotlin
     // path of the project you’re running this in.
     // REQUIRED
     arg("avkSrc", file("src/main/java"))
-    
+
     // Colon-delimited string of simple class names to convert
     // OPTIONAL. By default, AVK will convert all AutoValue models on the compilation.
     arg("avkTargets", "ClassOne:ClassTwo")
-    
+
     // Boolean option to ignore nested classes. By default, AVK will error out when it encounters
-    // a nested AutoValue class as it has no means of safely converting the class since its 
+    // a nested AutoValue class as it has no means of safely converting the class since its
     // references are always qualified. This option can be set to true to make AVK just skip them
     // and emit a warning.
     // OPTIONAL. False by default.
