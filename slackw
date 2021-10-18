@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+# Entry point for various Slack Android repo utilities
+
+if [[ ! -f "slackw" ]]; then
+  echo "slackw should only be run from the root repo directory!"
+  exit 1
+fi
+
+TOOL=$1
+shift
+if [[ "$TOOL" == "--help" ]] || [[ "$TOOL" == "-h" ]]; then
+  echo "Available commands: bootstrap, update-gradle, baseline, benchmark, generate-project, format, actions"
+elif [[ "$TOOL" == "bootstrap" ]]; then
+  tooling/scripts/bootstrap.sh "$@"
+elif [[ "$TOOL" == "update-gradle" ]]; then
+  tooling/scripts/updateGradle.sh "$@"
+elif [[ "$TOOL" == "gradle-profiler" ]]; then
+  tooling/scripts/gradle-profiler.sh "$@"
+elif [[ "$TOOL" == "baseline" ]]; then
+  tooling/scripts/baseline.sh "$@"
+elif [[ "$TOOL" == "generate-project" ]]; then
+  PATCH_KAPT_DEADLOCK=true tooling/scripts/generate-project.sh "$@"
+elif [[ "$TOOL" == "kill-daemons" ]]; then
+  ./gradlew --stop || true
+  jps|grep -E 'KotlinCompileDaemon|GradleDaemon'| awk '{print $1}'| xargs kill -9 || true
+  killall java || true
+elif [[ "$TOOL" == "regenerate-nonnull-packages" ]]; then
+  PATCH_KAPT_DEADLOCK=true tooling/scripts/regenerate-nonnull-package-info.sh "$@"
+elif [[ "$TOOL" == "format" ]]; then
+  tooling/scripts/format.sh "$@"
+elif [[ "$TOOL" == "actions" ]]; then
+  # Run a specific subscript within the actions dir ("prepareAndroidBuildEnv", etc).
+  # Do not include the .sh. Just the simple file name with no extension.
+  SUB_ACTION=$1
+  shift
+  tooling/scripts/actions/"$SUB_ACTION".sh "$@"
+else
+    echo "Unrecognized command $TOOL"
+    exit 1
+fi
