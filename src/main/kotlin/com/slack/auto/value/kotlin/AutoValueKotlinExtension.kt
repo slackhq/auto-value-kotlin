@@ -19,7 +19,6 @@ package com.slack.auto.value.kotlin
 
 import com.google.auto.service.AutoService
 import com.google.auto.value.extension.AutoValueExtension
-import com.slack.auto.value.kotlin.AutoValueKotlinExtension.AvkBuilder.Companion
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.BYTE
@@ -80,11 +79,6 @@ private val NONNULL_ANNOTATIONS = setOf(
   "Nonnull"
 )
 
-// Options
-private const val OPT_OUTPUT_DIR = "avkSrc"
-private const val OPT_TARGETS = "avkTargets"
-private const val OPT_IGNORE_NESTED = "avkIgnoreNested"
-
 private val PARCELIZE = ClassName("kotlinx.parcelize", "Parcelize")
 private val INTRINSIC_IMPORTS = setOf(
   "import java.lang.String",
@@ -142,11 +136,18 @@ private fun TypeName.normalize(): TypeName {
 @AutoService(AutoValueExtension::class)
 public class AutoValueKotlinExtension : AutoValueExtension() {
 
+  public companion object {
+    // Options
+    public const val OPT_SRC: String = "avkSrc"
+    public const val OPT_TARGETS: String = "avkTargets"
+    public const val OPT_IGNORE_NESTED: String = "avkIgnoreNested"
+  }
+
   private lateinit var elements: Elements
   private lateinit var types: Types
 
   override fun getSupportedOptions(): Set<String> {
-    return setOf(OPT_OUTPUT_DIR, OPT_TARGETS, OPT_IGNORE_NESTED)
+    return setOf(OPT_SRC, OPT_TARGETS, OPT_IGNORE_NESTED)
   }
 
   override fun incrementalType(processingEnvironment: ProcessingEnvironment): IncrementalExtensionType {
@@ -286,11 +287,12 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       // If all the properties are redacted, redacted the class?
       properties.values.all { it.isRedacted }
 
-    val parcelableClass = elements
+    val isParcelable = elements
       .getTypeElement("android.os.Parcelable")
-      .asType()
-
-    val isParcelable = avClass.interfaces.any { it.isClassOfType(types, parcelableClass) }
+      ?.asType()
+      ?.let { parcelableClass ->
+        avClass.interfaces.any { it.isClassOfType(types, parcelableClass) }
+      } ?: false
 
     val propertyMethods = context.properties().values.toSet()
 
@@ -321,7 +323,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       // Note we don't use context.propertyTypes() here because it doesn't contain nullability
       // info, which we did capture
       val propertyTypes = properties.mapValues { it.value.type }
-      avkBuilder = Companion.from(builder, propertyTypes) { parseDocs() }
+      avkBuilder = AvkBuilder.from(builder, propertyTypes) { parseDocs() }
 
       builderFactories += builder.builderMethods()
       builderFactorySpecs += builder.builderMethods()
@@ -487,8 +489,8 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
     val superclass = avClass.superclass.asSafeTypeName()
       .takeUnless { it == ClassName("java.lang", "Object") }
 
-    val outputDir =
-      context.processingEnvironment().options[OPT_OUTPUT_DIR] ?: error("Missing output dir option")
+    val srcDir =
+      context.processingEnvironment().options[OPT_SRC] ?: error("Missing src dir option")
 
     KotlinClass(
       packageName = context.packageName(),
@@ -510,7 +512,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       classAnnotations = avClass.classAnnotations(),
       redactedClassName = redactedClassName,
       staticConstants = staticConstants
-    ).writeTo(outputDir, context.processingEnvironment().messager)
+    ).writeTo(srcDir, context.processingEnvironment().messager)
 
     return null
   }
@@ -887,16 +889,16 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       require(Files.notExists(directory) || Files.isDirectory(directory)) {
         "path $directory exists but is not a directory."
       }
-      var outputDirectory = directory
+      var srcDirectory = directory
       if (packageName.isNotEmpty()) {
         for (packageComponent in packageName.split('.').dropLastWhile { it.isEmpty() }) {
-          outputDirectory = outputDirectory.resolve(packageComponent)
+          srcDirectory = srcDirectory.resolve(packageComponent)
         }
       }
 
-      Files.createDirectories(outputDirectory)
+      Files.createDirectories(srcDirectory)
 
-      val outputPath = outputDirectory.resolve("$name.kt")
+      val outputPath = srcDirectory.resolve("$name.kt")
       OutputStreamWriter(
         Files.newOutputStream(outputPath),
         StandardCharsets.UTF_8
