@@ -19,7 +19,7 @@ package com.slack.auto.value.kotlin
 
 import com.google.auto.service.AutoService
 import com.google.auto.value.extension.AutoValueExtension
-import com.slack.auto.value.kotlin.AutoValueToKotlinConverter.AvkBuilder.Companion
+import com.slack.auto.value.kotlin.AutoValueKotlinExtension.AvkBuilder.Companion
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.BYTE
@@ -139,10 +139,8 @@ private fun TypeName.normalize(): TypeName {
   }
 }
 
-// TODO
-//  - Tests
 @AutoService(AutoValueExtension::class)
-public class AutoValueToKotlinConverter : AutoValueExtension() {
+public class AutoValueKotlinExtension : AutoValueExtension() {
 
   private lateinit var elements: Elements
   private lateinit var types: Types
