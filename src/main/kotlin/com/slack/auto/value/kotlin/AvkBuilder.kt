@@ -15,7 +15,6 @@
  */
 package com.slack.auto.value.kotlin
 
-import com.google.auto.value.extension.AutoValueExtension.BuilderContext
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
@@ -29,9 +28,6 @@ import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.joinToCode
 import javax.annotation.processing.Messager
-import javax.lang.model.element.Element
-import javax.lang.model.element.Modifier.PUBLIC
-import javax.lang.model.util.ElementFilter
 import javax.tools.Diagnostic.Kind.WARNING
 
 @ExperimentalAvkApi
@@ -146,66 +142,6 @@ public data class AvkBuilder(
   @ExperimentalAvkApi
   public data class BuilderProperty(val name: String, val type: TypeName, val setters: Set<FunSpec>)
 
-  internal companion object {
-    internal fun from(
-      builderContext: BuilderContext,
-      propertyTypes: Map<String, TypeName>,
-      parseDocs: Element.() -> String?
-    ): AvkBuilder {
-      // Setters
-      val props = builderContext.setters().entries.map { (prop, setters) ->
-        val type = propertyTypes.getValue(prop)
-        BuilderProperty(
-          prop,
-          type,
-          setters.mapTo(LinkedHashSet()) {
-            FunSpec.copyOf(it)
-              .withDocsFrom(it, parseDocs)
-              .build()
-          }
-        )
-      }
-
-      val builderMethods = builderContext.setters().values.flatten()
-        .plus(builderContext.autoBuildMethod())
-        .toMutableSet()
-
-      if (builderContext.buildMethod().isPresent) {
-        builderMethods += builderContext.buildMethod().get()
-      }
-
-      // TODO propertyBuilders
-
-      val remainingMethods =
-        ElementFilter.methodsIn(builderContext.builderType().enclosedElements)
-          .asSequence()
-          .filterNot { it in builderMethods }
-          .filterNot { it == builderContext.autoBuildMethod() }
-          .map { "${it.modifiers.joinToString(" ")} ${it.returnType} ${it.simpleName}(...)" }
-          .toList()
-
-      return AvkBuilder(
-        name = builderContext.builderType().simpleName.toString(),
-        doc = builderContext.builderType().parseDocs(),
-        visibility = if (PUBLIC in builderContext.builderType().modifiers) {
-          KModifier.PUBLIC
-        } else {
-          INTERNAL
-        },
-        builderProps = props,
-        buildFun = builderContext.buildMethod()
-          .map {
-            FunSpec.copyOf(it)
-              .withDocsFrom(it, parseDocs)
-              .build()
-          }
-          .orElse(null),
-        autoBuildFun = FunSpec.copyOf(builderContext.autoBuildMethod())
-          .withDocsFrom(builderContext.autoBuildMethod(), parseDocs)
-          .build(),
-        remainingMethods = remainingMethods,
-        classAnnotations = builderContext.builderType().classAnnotations()
-      )
-    }
-  }
+  // Public for extension
+  public companion object
 }

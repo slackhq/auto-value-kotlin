@@ -251,4 +251,7 @@ public data class KotlinClass(
     ).use { writer -> writeTo(writer) }
     return outputPath
   }
+
+  // Public for extension
+  public companion object
 }

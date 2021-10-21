@@ -31,4 +31,7 @@ public data class PropertyContext(
   val doc: String?
 ) {
   public val usesGet: Boolean = name.startsWith("get") || funName.startsWith("get")
+
+  // Public for extension
+  public companion object
 }
