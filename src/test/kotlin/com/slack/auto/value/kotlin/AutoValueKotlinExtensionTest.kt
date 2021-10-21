@@ -34,6 +34,7 @@ import org.junit.rules.TemporaryFolder
 import java.io.File
 import javax.tools.JavaFileObject
 
+@Suppress("LongMethod", "LargeClass", "MaxLineLength")
 class AutoValueKotlinExtensionTest {
   @JvmField
   @Rule
