@@ -120,4 +120,9 @@ dependencies {
   testImplementation("com.google.truth:truth:1.1.3")
   testImplementation("org.jetbrains.kotlin:kotlin-test:1.5.31")
   testImplementation("com.google.testing.compile:compile-testing:0.19")
+  testImplementation("com.ryanharter.auto.value:auto-value-moshi-extension:1.1.0")
+  testImplementation("com.ryanharter.auto.value:auto-value-parcel:0.2.9")
+  testImplementation("com.gabrielittner.auto.value:auto-value-with:1.1.1")
+  testImplementation("com.squareup.auto.value:auto-value-redacted:1.1.1")
+  testImplementation("com.google.android:android:4.1.1.4")
 }

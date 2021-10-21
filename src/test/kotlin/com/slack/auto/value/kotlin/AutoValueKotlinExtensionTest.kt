@@ -15,6 +15,7 @@
  */
 package com.slack.auto.value.kotlin
 
+import com.gabrielittner.auto.value.with.AutoValueWithExtension
 import com.google.auto.value.processor.AutoValueProcessor
 import com.google.common.truth.Truth.assertAbout
 import com.google.common.truth.Truth.assertThat
@@ -22,6 +23,9 @@ import com.google.testing.compile.CompilationSubject
 import com.google.testing.compile.CompilationSubject.compilations
 import com.google.testing.compile.Compiler.javac
 import com.google.testing.compile.JavaFileObjects.forSourceString
+import com.ryanharter.auto.value.moshi.AutoValueMoshiExtension
+import com.ryanharter.auto.value.parcel.AutoValueParcelExtension
+import com.squareup.auto.value.redacted.AutoValueRedactedExtension
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -44,9 +48,6 @@ class AutoValueKotlinExtensionTest {
   }
 
   // TODO
-  //  avm
-  //  withers
-  //  parcelable
   //  nullable primitives
   //  nullable/primitive/collection defaults
   //  autoBuild?
@@ -62,12 +63,16 @@ class AutoValueKotlinExtensionTest {
         """
           package test;
 
+          import android.os.Parcelable;
           import com.google.auto.value.AutoValue;
+          import com.slack.auto.value.kotlin.Redacted;
+          import com.squareup.moshi.JsonClass;
           import java.util.List;
           import org.jetbrains.annotations.Nullable;
 
+          @JsonClass(generateAdapter = true, generator = "avm")
           @AutoValue
-          abstract class Example {
+          abstract class Example implements Parcelable {
             private static final String STRING_CONSTANT = "hello";
             private static final int INT_CONSTANT = 3;
 
@@ -89,6 +94,9 @@ class AutoValueKotlinExtensionTest {
             abstract float aFloat();
             abstract long aLong();
             abstract double aDouble();
+
+            @Redacted
+            abstract String redactedString();
 
             boolean isNullableValuePresent() {
               return nullableValue() != null;
@@ -114,6 +122,7 @@ class AutoValueKotlinExtensionTest {
               abstract Builder aFloat(float value);
               abstract Builder aLong(long value);
               abstract Builder aDouble(double value);
+              abstract Builder redactedString(String value);
               Builder defaultValue() {
                 return value("hello");
               }
@@ -133,6 +142,9 @@ class AutoValueKotlinExtensionTest {
         """
         package test
 
+        import android.os.Parcelable
+        import com.slack.auto.`value`.kotlin.Redacted
+        import com.squareup.moshi.JsonClass
         import kotlin.Boolean
         import kotlin.Byte
         import kotlin.Char
@@ -149,7 +161,10 @@ class AutoValueKotlinExtensionTest {
         import kotlin.jvm.JvmName
         import kotlin.jvm.JvmStatic
         import kotlin.jvm.JvmSynthetic
+        import kotlinx.parcelize.Parcelize
 
+        @JsonClass(generateAdapter = true)
+        @Parcelize
         data class Example internal constructor(
           @get:JvmName("value")
           val `value`: String,
@@ -174,8 +189,11 @@ class AutoValueKotlinExtensionTest {
           @get:JvmName("aLong")
           val aLong: Long,
           @get:JvmName("aDouble")
-          val aDouble: Double
-        ) {
+          val aDouble: Double,
+          @get:JvmName("redactedString")
+          @Redacted
+          val redactedString: String
+        ) : Parcelable {
           @JvmSynthetic
           @JvmName("-value")
           @Deprecated(
@@ -308,6 +326,17 @@ class AutoValueKotlinExtensionTest {
             TODO("Remove this function. Use the above line to auto-migrate.")
           }
 
+          @JvmSynthetic
+          @JvmName("-redactedString")
+          @Deprecated(
+            message = "Use the property",
+            replaceWith = ReplaceWith("redactedString")
+          )
+          fun redactedString(): String {
+            redactedString()
+            TODO("Remove this function. Use the above line to auto-migrate.")
+          }
+
           fun placeholder(): Nothing {
             // TODO This is a placeholder to mention the following methods need to be moved manually over:
             //    boolean isNullableValuePresent(...)
@@ -315,7 +344,7 @@ class AutoValueKotlinExtensionTest {
           }
 
           internal fun toBuilder(): Builder =
-              Builder(value = value, nullableValue = nullableValue, collection = collection, nullableCollection = nullableCollection, aBoolean = aBoolean, aChar = aChar, aByte = aByte, aShort = aShort, aInt = aInt, aFloat = aFloat, aLong = aLong, aDouble = aDouble)
+              Builder(value = value, nullableValue = nullableValue, collection = collection, nullableCollection = nullableCollection, aBoolean = aBoolean, aChar = aChar, aByte = aByte, aShort = aShort, aInt = aInt, aFloat = aFloat, aLong = aLong, aDouble = aDouble, redactedString = redactedString)
 
           @Suppress("LongParameterList")
           internal class Builder internal constructor(
@@ -330,7 +359,8 @@ class AutoValueKotlinExtensionTest {
             private var aInt: Int = 0,
             private var aFloat: Float = 0f,
             private var aLong: Long = 0L,
-            private var aDouble: Double = 0.0
+            private var aDouble: Double = 0.0,
+            private var redactedString: String? = null
           ) {
             internal fun `value`(`value`: String): Builder = apply { this.`value` = `value` }
 
@@ -357,9 +387,11 @@ class AutoValueKotlinExtensionTest {
 
             internal fun aDouble(`value`: Double): Builder = apply { this.aDouble = `value` }
 
+            internal fun redactedString(`value`: String): Builder = apply { this.redactedString = `value` }
+
             internal fun build(): Example =
-                Example(`value` = `value` ?: error("value == null"), nullableValue = nullableValue, collection = collection ?: error("collection == null"), nullableCollection = nullableCollection, aBoolean = aBoolean, aChar = aChar, aByte = aByte, aShort = aShort, aInt = aInt, aFloat = aFloat, aLong = aLong, aDouble = aDouble)
- 
+                Example(`value` = `value` ?: error("value == null"), nullableValue = nullableValue, collection = collection ?: error("collection == null"), nullableCollection = nullableCollection, aBoolean = aBoolean, aChar = aChar, aByte = aByte, aShort = aShort, aInt = aInt, aFloat = aFloat, aLong = aLong, aDouble = aDouble, redactedString = redactedString ?: error("redactedString == null"))
+
             fun placeholder(): Nothing {
               // TODO This is a placeholder to mention the following methods need to be moved manually over:
               //    test.Example.Builder defaultValue(...)
@@ -453,6 +485,77 @@ class AutoValueKotlinExtensionTest {
               internal operator fun invoke(`value`: String): Example = Example(value = value)
             }
           }
+
+        """.trimIndent()
+      )
+  }
+
+  @Test
+  fun wither() {
+    val result = compile(
+      forSourceString(
+        "test.Example",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+
+          @AutoValue
+          abstract class Example {
+
+            abstract String value();
+
+            abstract String withValue();
+          }
+        """.trimIndent()
+      )
+    )
+
+    result.succeeded()
+    val generated = File(srcDir, "test/Example.kt")
+    assertThat(generated.exists()).isTrue()
+    assertThat(generated.readText())
+      .isEqualTo(
+        """
+          package test
+
+          import kotlin.Deprecated
+          import kotlin.ReplaceWith
+          import kotlin.String
+          import kotlin.jvm.JvmName
+          import kotlin.jvm.JvmSynthetic
+
+          data class Example(
+            @get:JvmName("value")
+            val `value`: String,
+            @get:JvmName("withValue")
+            val withValue: String
+          ) {
+            @JvmSynthetic
+            @JvmName("-value")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("value")
+            )
+            fun `value`(): String {
+              `value`()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-withValue")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("withValue")
+            )
+            fun withValue(): String {
+              withValue()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            fun withValue(`value`: String): Example = copy(`value` = `value`)
+          }
+
         """.trimIndent()
       )
   }
@@ -460,7 +563,17 @@ class AutoValueKotlinExtensionTest {
   private fun compile(vararg sourceFiles: JavaFileObject): CompilationSubject {
     val compilation = javac()
       .withOptions("-A${AutoValueKotlinExtension.OPT_SRC}=${srcDir.absolutePath}")
-      .withProcessors(AutoValueProcessor(listOf(AutoValueKotlinExtension())))
+      .withProcessors(
+        AutoValueProcessor(
+          listOf(
+            AutoValueKotlinExtension(),
+            AutoValueMoshiExtension(),
+            AutoValueWithExtension(),
+            AutoValueRedactedExtension(),
+            AutoValueParcelExtension()
+          )
+        )
+      )
       .compile(*sourceFiles)
     return assertAbout(compilations())
       .that(compilation)
