@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2021 Slack Technologies, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.slack.auto.value.kotlin
 
 import com.google.auto.value.processor.AutoValueProcessor
@@ -6,7 +21,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.testing.compile.CompilationSubject
 import com.google.testing.compile.CompilationSubject.compilations
 import com.google.testing.compile.Compiler.javac
-import com.google.testing.compile.JavaFileObjects
+import com.google.testing.compile.JavaFileObjects.forSourceString
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -44,75 +59,79 @@ class AutoValueKotlinExtensionTest {
   @Test
   fun smokeTest() {
     val result = compile(
-      JavaFileObjects.forSourceString("test.Example", """
-      package test;
+      forSourceString(
+        "test.Example",
+        """
+          package test;
 
-      import com.google.auto.value.AutoValue;
-      import java.util.List;
-      import org.jetbrains.annotations.Nullable;
+          import com.google.auto.value.AutoValue;
+          import java.util.List;
+          import org.jetbrains.annotations.Nullable;
 
-      @AutoValue
-      abstract class Example {
-        private static final String STRING_CONSTANT = "hello";
-        private static final int INT_CONSTANT = 3;
-      
-        abstract String value();
-        
-        @Nullable
-        abstract String nullableValue();
-        
-        abstract List<String> collection();
-        
-        @Nullable
-        abstract List<String> nullableCollection();
-        
-        abstract boolean aBoolean();
-        abstract char aChar();
-        abstract byte aByte();
-        abstract short aShort();
-        abstract int aInt();
-        abstract float aFloat();
-        abstract long aLong();
-        abstract double aDouble();
-        
-        boolean isNullableValuePresent() {
-          return nullableValue() != null;
-        }
-        
-        abstract Builder toBuilder();
-        
-        static Builder builder() {
-          return null;
-        }
-        
-        @AutoValue.Builder
-        abstract static class Builder {
-          abstract Builder value(String value);
-          abstract Builder nullableValue(@Nullable String value);
-          abstract Builder collection(List<String> value);
-          abstract Builder nullableCollection(@Nullable List<String> value);
-          abstract Builder aBoolean(boolean value);
-          abstract Builder aChar(char value);
-          abstract Builder aByte(byte value);
-          abstract Builder aShort(short value);
-          abstract Builder aInt(int value);
-          abstract Builder aFloat(float value);
-          abstract Builder aLong(long value);
-          abstract Builder aDouble(double value);
-          abstract Example build();
-        }
-      }
-    """
-    ))
+          @AutoValue
+          abstract class Example {
+            private static final String STRING_CONSTANT = "hello";
+            private static final int INT_CONSTANT = 3;
+
+            abstract String value();
+
+            @Nullable
+            abstract String nullableValue();
+
+            abstract List<String> collection();
+
+            @Nullable
+            abstract List<String> nullableCollection();
+
+            abstract boolean aBoolean();
+            abstract char aChar();
+            abstract byte aByte();
+            abstract short aShort();
+            abstract int aInt();
+            abstract float aFloat();
+            abstract long aLong();
+            abstract double aDouble();
+
+            boolean isNullableValuePresent() {
+              return nullableValue() != null;
+            }
+
+            abstract Builder toBuilder();
+
+            static Builder builder() {
+              return null;
+            }
+
+            @AutoValue.Builder
+            abstract static class Builder {
+              abstract Builder value(String value);
+              abstract Builder nullableValue(@Nullable String value);
+              abstract Builder collection(List<String> value);
+              abstract Builder nullableCollection(@Nullable List<String> value);
+              abstract Builder aBoolean(boolean value);
+              abstract Builder aChar(char value);
+              abstract Builder aByte(byte value);
+              abstract Builder aShort(short value);
+              abstract Builder aInt(int value);
+              abstract Builder aFloat(float value);
+              abstract Builder aLong(long value);
+              abstract Builder aDouble(double value);
+              abstract Example build();
+            }
+          }
+        """.trimIndent()
+      )
+    )
 
     result.succeeded()
     val generated = File(srcDir, "test/Example.kt")
     assertThat(generated.exists()).isTrue()
     assertThat(generated.readText())
       //language=Kotlin
-      .isEqualTo("""
+      .isEqualTo(
+        """
         package test
-  
+
         import kotlin.Boolean
         import kotlin.Byte
         import kotlin.Char
@@ -129,7 +148,7 @@ class AutoValueKotlinExtensionTest {
         import kotlin.jvm.JvmName
         import kotlin.jvm.JvmStatic
         import kotlin.jvm.JvmSynthetic
-  
+
         data class Example internal constructor(
           @get:JvmName("value")
           val `value`: String,
@@ -166,7 +185,7 @@ class AutoValueKotlinExtensionTest {
             `value`()
             TODO("Remove this function. Use the above line to auto-migrate.")
           }
-  
+
           @JvmSynthetic
           @JvmName("-nullableValue")
           @Deprecated(
@@ -177,7 +196,7 @@ class AutoValueKotlinExtensionTest {
             nullableValue()
             TODO("Remove this function. Use the above line to auto-migrate.")
           }
-  
+
           @JvmSynthetic
           @JvmName("-collection")
           @Deprecated(
@@ -188,7 +207,7 @@ class AutoValueKotlinExtensionTest {
             collection()
             TODO("Remove this function. Use the above line to auto-migrate.")
           }
-  
+
           @JvmSynthetic
           @JvmName("-nullableCollection")
           @Deprecated(
@@ -199,7 +218,7 @@ class AutoValueKotlinExtensionTest {
             nullableCollection()
             TODO("Remove this function. Use the above line to auto-migrate.")
           }
-  
+
           @JvmSynthetic
           @JvmName("-aBoolean")
           @Deprecated(
@@ -210,7 +229,7 @@ class AutoValueKotlinExtensionTest {
             aBoolean()
             TODO("Remove this function. Use the above line to auto-migrate.")
           }
-  
+
           @JvmSynthetic
           @JvmName("-aChar")
           @Deprecated(
@@ -221,7 +240,7 @@ class AutoValueKotlinExtensionTest {
             aChar()
             TODO("Remove this function. Use the above line to auto-migrate.")
           }
-  
+
           @JvmSynthetic
           @JvmName("-aByte")
           @Deprecated(
@@ -232,7 +251,7 @@ class AutoValueKotlinExtensionTest {
             aByte()
             TODO("Remove this function. Use the above line to auto-migrate.")
           }
-  
+
           @JvmSynthetic
           @JvmName("-aShort")
           @Deprecated(
@@ -243,7 +262,7 @@ class AutoValueKotlinExtensionTest {
             aShort()
             TODO("Remove this function. Use the above line to auto-migrate.")
           }
-  
+
           @JvmSynthetic
           @JvmName("-aInt")
           @Deprecated(
@@ -254,7 +273,7 @@ class AutoValueKotlinExtensionTest {
             aInt()
             TODO("Remove this function. Use the above line to auto-migrate.")
           }
-  
+
           @JvmSynthetic
           @JvmName("-aFloat")
           @Deprecated(
@@ -265,7 +284,7 @@ class AutoValueKotlinExtensionTest {
             aFloat()
             TODO("Remove this function. Use the above line to auto-migrate.")
           }
-  
+
           @JvmSynthetic
           @JvmName("-aLong")
           @Deprecated(
@@ -276,7 +295,7 @@ class AutoValueKotlinExtensionTest {
             aLong()
             TODO("Remove this function. Use the above line to auto-migrate.")
           }
-  
+
           @JvmSynthetic
           @JvmName("-aDouble")
           @Deprecated(
@@ -293,10 +312,10 @@ class AutoValueKotlinExtensionTest {
             //    boolean isNullableValuePresent(...)
             TODO()
           }
-  
+
           internal fun toBuilder(): Builder =
               Builder(value = value, nullableValue = nullableValue, collection = collection, nullableCollection = nullableCollection, aBoolean = aBoolean, aChar = aChar, aByte = aByte, aShort = aShort, aInt = aInt, aFloat = aFloat, aLong = aLong, aDouble = aDouble)
-  
+
           @Suppress("LongParameterList")
           internal class Builder internal constructor(
             private var `value`: String? = null,
@@ -313,34 +332,34 @@ class AutoValueKotlinExtensionTest {
             private var aDouble: Double = 0.0
           ) {
             internal fun `value`(`value`: String): Builder = apply { this.`value` = `value` }
-  
+
             internal fun nullableValue(`value`: String?): Builder = apply { this.nullableValue = `value` }
-  
+
             internal fun collection(`value`: List<String>): Builder = apply { this.collection = `value` }
-  
+
             internal fun nullableCollection(`value`: List<String>?): Builder =
                 apply { this.nullableCollection = `value` }
-  
+
             internal fun aBoolean(`value`: Boolean): Builder = apply { this.aBoolean = `value` }
-  
+
             internal fun aChar(`value`: Char): Builder = apply { this.aChar = `value` }
-  
+
             internal fun aByte(`value`: Byte): Builder = apply { this.aByte = `value` }
-  
+
             internal fun aShort(`value`: Short): Builder = apply { this.aShort = `value` }
-  
+
             internal fun aInt(`value`: Int): Builder = apply { this.aInt = `value` }
-  
+
             internal fun aFloat(`value`: Float): Builder = apply { this.aFloat = `value` }
-  
+
             internal fun aLong(`value`: Long): Builder = apply { this.aLong = `value` }
-  
+
             internal fun aDouble(`value`: Double): Builder = apply { this.aDouble = `value` }
-  
+
             internal fun build(): Example =
                 Example(`value` = `value` ?: error("value == null"), nullableValue = nullableValue, collection = collection ?: error("collection == null"), nullableCollection = nullableCollection, aBoolean = aBoolean, aChar = aChar, aByte = aByte, aShort = aShort, aInt = aInt, aFloat = aFloat, aLong = aLong, aDouble = aDouble)
           }
-  
+
           companion object {
             private const val STRING_CONSTANT: String = "hello"
 
@@ -352,8 +371,9 @@ class AutoValueKotlinExtensionTest {
             }
           }
         }
-  
-      """.trimIndent())
+
+        """.trimIndent()
+      )
   }
 
   private fun compile(vararg sourceFiles: JavaFileObject): CompilationSubject {
