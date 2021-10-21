@@ -59,6 +59,7 @@ class AutoValueKotlinExtensionTest {
           import android.os.Parcelable;
           import com.google.auto.value.AutoValue;
           import com.slack.auto.value.kotlin.Redacted;
+          import com.squareup.moshi.Json;
           import com.squareup.moshi.JsonClass;
           import java.util.List;
           import org.jetbrains.annotations.Nullable;
@@ -69,6 +70,7 @@ class AutoValueKotlinExtensionTest {
             private static final String STRING_CONSTANT = "hello";
             private static final int INT_CONSTANT = 3;
 
+            @Json(name = "_value")
             abstract String value();
 
             @Nullable
@@ -137,6 +139,7 @@ class AutoValueKotlinExtensionTest {
 
         import android.os.Parcelable
         import com.slack.auto.`value`.kotlin.Redacted
+        import com.squareup.moshi.Json
         import com.squareup.moshi.JsonClass
         import kotlin.Boolean
         import kotlin.Byte
@@ -159,6 +162,7 @@ class AutoValueKotlinExtensionTest {
         @JsonClass(generateAdapter = true)
         @Parcelize
         data class Example internal constructor(
+          @Json(name = "_value")
           @get:JvmName("value")
           val `value`: String,
           @get:JvmName("nullableValue")
