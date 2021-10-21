@@ -93,6 +93,21 @@ spotless {
   }
 }
 
+tasks.withType<Test>().configureEach {
+  jvmArgs(
+    "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+    "--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+    "--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
+    "--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+    "--add-opens=jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED",
+    "--add-opens=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+    "--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+    "--add-opens=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+    "--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+    "--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
+  )
+}
+
 val moshiVersion = "1.12.0"
 dependencies {
   ksp("dev.zacsweers.autoservice:auto-service-ksp:1.0.0")
@@ -104,5 +119,5 @@ dependencies {
   testImplementation("junit:junit:4.13.2")
   testImplementation("com.google.truth:truth:1.1.3")
   testImplementation("org.jetbrains.kotlin:kotlin-test:1.5.31")
-  testImplementation("com.github.tschuchortdev:kotlin-compile-testing-ksp:1.4.5")
+  testImplementation("com.google.testing.compile:compile-testing:0.19")
 }
