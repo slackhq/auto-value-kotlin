@@ -778,6 +778,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
         )
 
         constructorBuilder.addParameter(prop.name, prop.type)
+        // TODO if no builder, default vals here (primitives or nullable)
 
         // Generate the original getter. We'll either deprecate it or we need to keep it
         // No need to generate if this uses get... syntax as Kotlin users would already be using
