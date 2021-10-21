@@ -44,7 +44,6 @@ class AutoValueKotlinExtensionTest {
   }
 
   // TODO
-  //  static creators
   //  avm
   //  withers
   //  parcelable
@@ -372,6 +371,80 @@ class AutoValueKotlinExtensionTest {
           }
         }
 
+        """.trimIndent()
+      )
+  }
+
+  @Test
+  fun creators() {
+    val result = compile(
+      forSourceString(
+        "test.Example",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+
+          @AutoValue
+          abstract class Example {
+
+            abstract String value();
+
+            static Example create(String value) {
+              return null;
+            }
+          }
+        """.trimIndent()
+      )
+    )
+
+    result.succeeded()
+    val generated = File(srcDir, "test/Example.kt")
+    assertThat(generated.exists()).isTrue()
+    assertThat(generated.readText())
+      .isEqualTo(
+        """
+          package test
+
+          import kotlin.Deprecated
+          import kotlin.ReplaceWith
+          import kotlin.String
+          import kotlin.jvm.JvmName
+          import kotlin.jvm.JvmStatic
+          import kotlin.jvm.JvmSynthetic
+
+          data class Example(
+            @get:JvmName("value")
+            val `value`: String
+          ) {
+            @JvmSynthetic
+            @JvmName("-value")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("value")
+            )
+            fun `value`(): String {
+              `value`()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            companion object {
+              @JvmStatic
+              @JvmName("-create")
+              @Deprecated(
+                message = "Use invoke()",
+                replaceWith = ReplaceWith("test.Example(value)")
+              )
+              internal fun create(`value`: String): Example {
+                create(value)
+                TODO("Remove this function. Use the above line to auto-migrate.")
+              }
+
+              @JvmStatic
+              @JvmName("create")
+              internal operator fun invoke(`value`: String): Example = Example(value = value)
+            }
+          }
         """.trimIndent()
       )
   }
