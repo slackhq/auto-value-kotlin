@@ -48,12 +48,6 @@ class AutoValueKotlinExtensionTest {
     srcDir = tmpFolder.newFolder("src/main/java")
   }
 
-  // TODO
-  //  autoBuild?
-  //  getter/setter syntax (what about mixed?)
-  //  error: nested
-  //  error: void, Unit, Nothing
-
   @Test
   fun smokeTest() {
     val result = compile(
@@ -1018,14 +1012,14 @@ class AutoValueKotlinExtensionTest {
           package test;
 
           import com.google.auto.value.AutoValue;
-          
+
           class Outer {
-          
+
             @AutoValue
             abstract static class Inner {
-  
+
               abstract String value();
-  
+
               abstract String withValue();
             }
           }
@@ -1046,14 +1040,14 @@ class AutoValueKotlinExtensionTest {
           package test;
 
           import com.google.auto.value.AutoValue;
-          
+
           class Outer {
-          
+
             @AutoValue
             abstract static class Inner {
-  
+
               abstract String value();
-  
+
               abstract String withValue();
             }
           }
@@ -1103,6 +1097,99 @@ class AutoValueKotlinExtensionTest {
     result.succeeded()
     assertThat(File(srcDir, "test/Example.kt").exists()).isTrue()
     assertThat(File(srcDir, "test/IgnoredExample.kt").exists()).isFalse()
+  }
+
+  @Test
+  fun getters() {
+    val result = compile(
+      forSourceString(
+        "test.Example",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+
+          @AutoValue
+          abstract class Example {
+            abstract String getValue();
+          }
+        """.trimIndent()
+      )
+    )
+
+    result.succeeded()
+    val generated = File(srcDir, "test/Example.kt")
+    assertThat(generated.exists()).isTrue()
+    assertThat(generated.readText())
+      .isEqualTo(
+        """
+          package test
+
+          import kotlin.String
+
+          data class Example(
+            val `value`: String
+          )
+
+        """.trimIndent()
+      )
+  }
+
+  // Mixed of get and non-get means everything is treated as non-get
+  // TODO maybe we should still use simple syntax for getters since kotlin property syntax will
+  //  still kick in?
+  @Test
+  fun gettersMixed() {
+    val result = compile(
+      forSourceString(
+        "test.Example",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+
+          @AutoValue
+          abstract class Example {
+            abstract String getValue();
+            abstract String nonGetValue();
+          }
+        """.trimIndent()
+      )
+    )
+
+    result.succeeded()
+    val generated = File(srcDir, "test/Example.kt")
+    assertThat(generated.exists()).isTrue()
+    assertThat(generated.readText())
+      .isEqualTo(
+        """
+          package test
+
+          import kotlin.Deprecated
+          import kotlin.ReplaceWith
+          import kotlin.String
+          import kotlin.jvm.JvmName
+          import kotlin.jvm.JvmSynthetic
+
+          data class Example(
+            val getValue: String,
+            @get:JvmName("nonGetValue")
+            val nonGetValue: String
+          ) {
+            @JvmSynthetic
+            @JvmName("-nonGetValue")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("nonGetValue")
+            )
+            fun nonGetValue(): String {
+              nonGetValue()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+          }
+
+        """.trimIndent()
+      )
   }
 
   private fun compilerSrcOption(): String {
