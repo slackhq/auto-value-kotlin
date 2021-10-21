@@ -777,8 +777,18 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
             .build()
         )
 
-        constructorBuilder.addParameter(prop.name, prop.type)
-        // TODO if no builder, default vals here (primitives or nullable)
+        val defaultCodeBlock = when {
+          avkBuilder != null -> null // Builders handle the defaults
+          prop.type.isNullable -> CodeBlock.of("null")
+          else -> prop.type.defaultPrimitiveValue().takeIf { it.toString() != "null" }
+        }
+        constructorBuilder.addParameter(
+          ParameterSpec.builder(prop.name, prop.type)
+            .apply {
+              defaultCodeBlock?.let { defaultValue(it) }
+            }
+            .build()
+        )
 
         // Generate the original getter. We'll either deprecate it or we need to keep it
         // No need to generate if this uses get... syntax as Kotlin users would already be using

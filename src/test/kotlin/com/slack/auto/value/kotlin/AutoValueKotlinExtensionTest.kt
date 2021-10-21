@@ -48,8 +48,6 @@ class AutoValueKotlinExtensionTest {
   }
 
   // TODO
-  //  nullable primitives
-  //  nullable/primitive/collection defaults
   //  autoBuild?
   //  getter/setter syntax (what about mixed?)
   //  error: nested
@@ -554,6 +552,456 @@ class AutoValueKotlinExtensionTest {
             }
 
             fun withValue(`value`: String): Example = copy(`value` = `value`)
+          }
+
+        """.trimIndent()
+      )
+  }
+
+  @Test
+  fun defaultsInConstructor() {
+    val result = compile(
+      forSourceString(
+        "test.Example",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+          import java.util.List;
+          import org.jetbrains.annotations.Nullable;
+
+          @AutoValue
+          abstract class Example {
+
+            abstract String value();
+
+            @Nullable
+            abstract String nullableValue();
+
+            abstract List<String> collection();
+
+            @Nullable
+            abstract List<String> nullableCollection();
+
+            abstract boolean aBoolean();
+            abstract char aChar();
+            abstract byte aByte();
+            abstract short aShort();
+            abstract int aInt();
+            abstract float aFloat();
+            abstract long aLong();
+            abstract double aDouble();
+
+            abstract Boolean aBooleanReference();
+            abstract Character aCharReference();
+            abstract Byte aByteReference();
+            abstract Short aShortReference();
+            abstract Integer aIntReference();
+            abstract Float aFloatReference();
+            abstract Long aLongReference();
+            abstract Double aDoubleReference();
+
+            abstract Boolean aNullableBooleanReference();
+            abstract Character aNullableCharReference();
+            abstract Byte aNullableByteReference();
+            abstract Short aNullableShortReference();
+            abstract Integer aNullableIntReference();
+            abstract Float aNullableFloatReference();
+            abstract Long aNullableLongReference();
+            abstract Double aNullableDoubleReference();
+
+          }
+        """.trimIndent()
+      )
+    )
+
+    result.succeeded()
+    val generated = File(srcDir, "test/Example.kt")
+    assertThat(generated.exists()).isTrue()
+    assertThat(generated.readText())
+      .isEqualTo(
+        """
+          package test
+
+          import kotlin.Boolean
+          import kotlin.Byte
+          import kotlin.Char
+          import kotlin.Deprecated
+          import kotlin.Double
+          import kotlin.Float
+          import kotlin.Int
+          import kotlin.Long
+          import kotlin.ReplaceWith
+          import kotlin.Short
+          import kotlin.String
+          import kotlin.jvm.JvmName
+          import kotlin.jvm.JvmSynthetic
+
+          data class Example(
+            @get:JvmName("value")
+            val `value`: String,
+            @get:JvmName("nullableValue")
+            val nullableValue: String? = null,
+            @get:JvmName("collection")
+            val collection: List<String>,
+            @get:JvmName("nullableCollection")
+            val nullableCollection: List<String>? = null,
+            @get:JvmName("aBoolean")
+            val aBoolean: Boolean = false,
+            @get:JvmName("aChar")
+            val aChar: Char = 0.toChar(),
+            @get:JvmName("aByte")
+            val aByte: Byte = 0.toByte(),
+            @get:JvmName("aShort")
+            val aShort: Short = 0.toShort(),
+            @get:JvmName("aInt")
+            val aInt: Int = 0,
+            @get:JvmName("aFloat")
+            val aFloat: Float = 0f,
+            @get:JvmName("aLong")
+            val aLong: Long = 0L,
+            @get:JvmName("aDouble")
+            val aDouble: Double = 0.0,
+            @get:JvmName("aBooleanReference")
+            val aBooleanReference: Boolean = false,
+            @get:JvmName("aCharReference")
+            val aCharReference: Char = 0.toChar(),
+            @get:JvmName("aByteReference")
+            val aByteReference: Byte = 0.toByte(),
+            @get:JvmName("aShortReference")
+            val aShortReference: Short = 0.toShort(),
+            @get:JvmName("aIntReference")
+            val aIntReference: Int = 0,
+            @get:JvmName("aFloatReference")
+            val aFloatReference: Float = 0f,
+            @get:JvmName("aLongReference")
+            val aLongReference: Long = 0L,
+            @get:JvmName("aDoubleReference")
+            val aDoubleReference: Double = 0.0,
+            @get:JvmName("aNullableBooleanReference")
+            val aNullableBooleanReference: Boolean = false,
+            @get:JvmName("aNullableCharReference")
+            val aNullableCharReference: Char = 0.toChar(),
+            @get:JvmName("aNullableByteReference")
+            val aNullableByteReference: Byte = 0.toByte(),
+            @get:JvmName("aNullableShortReference")
+            val aNullableShortReference: Short = 0.toShort(),
+            @get:JvmName("aNullableIntReference")
+            val aNullableIntReference: Int = 0,
+            @get:JvmName("aNullableFloatReference")
+            val aNullableFloatReference: Float = 0f,
+            @get:JvmName("aNullableLongReference")
+            val aNullableLongReference: Long = 0L,
+            @get:JvmName("aNullableDoubleReference")
+            val aNullableDoubleReference: Double = 0.0
+          ) {
+            @JvmSynthetic
+            @JvmName("-value")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("value")
+            )
+            fun `value`(): String {
+              `value`()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-nullableValue")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("nullableValue")
+            )
+            fun nullableValue(): String? {
+              nullableValue()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-collection")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("collection")
+            )
+            fun collection(): List<String> {
+              collection()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-nullableCollection")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("nullableCollection")
+            )
+            fun nullableCollection(): List<String>? {
+              nullableCollection()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aBoolean")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aBoolean")
+            )
+            fun aBoolean(): Boolean {
+              aBoolean()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aChar")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aChar")
+            )
+            fun aChar(): Char {
+              aChar()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aByte")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aByte")
+            )
+            fun aByte(): Byte {
+              aByte()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aShort")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aShort")
+            )
+            fun aShort(): Short {
+              aShort()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aInt")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aInt")
+            )
+            fun aInt(): Int {
+              aInt()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aFloat")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aFloat")
+            )
+            fun aFloat(): Float {
+              aFloat()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aLong")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aLong")
+            )
+            fun aLong(): Long {
+              aLong()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aDouble")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aDouble")
+            )
+            fun aDouble(): Double {
+              aDouble()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aBooleanReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aBooleanReference")
+            )
+            fun aBooleanReference(): Boolean {
+              aBooleanReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aCharReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aCharReference")
+            )
+            fun aCharReference(): Char {
+              aCharReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aByteReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aByteReference")
+            )
+            fun aByteReference(): Byte {
+              aByteReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aShortReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aShortReference")
+            )
+            fun aShortReference(): Short {
+              aShortReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aIntReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aIntReference")
+            )
+            fun aIntReference(): Int {
+              aIntReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aFloatReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aFloatReference")
+            )
+            fun aFloatReference(): Float {
+              aFloatReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aLongReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aLongReference")
+            )
+            fun aLongReference(): Long {
+              aLongReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aDoubleReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aDoubleReference")
+            )
+            fun aDoubleReference(): Double {
+              aDoubleReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aNullableBooleanReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aNullableBooleanReference")
+            )
+            fun aNullableBooleanReference(): Boolean {
+              aNullableBooleanReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aNullableCharReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aNullableCharReference")
+            )
+            fun aNullableCharReference(): Char {
+              aNullableCharReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aNullableByteReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aNullableByteReference")
+            )
+            fun aNullableByteReference(): Byte {
+              aNullableByteReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aNullableShortReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aNullableShortReference")
+            )
+            fun aNullableShortReference(): Short {
+              aNullableShortReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aNullableIntReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aNullableIntReference")
+            )
+            fun aNullableIntReference(): Int {
+              aNullableIntReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aNullableFloatReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aNullableFloatReference")
+            )
+            fun aNullableFloatReference(): Float {
+              aNullableFloatReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aNullableLongReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aNullableLongReference")
+            )
+            fun aNullableLongReference(): Long {
+              aNullableLongReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            @JvmSynthetic
+            @JvmName("-aNullableDoubleReference")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("aNullableDoubleReference")
+            )
+            fun aNullableDoubleReference(): Double {
+              aNullableDoubleReference()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
           }
 
         """.trimIndent()
