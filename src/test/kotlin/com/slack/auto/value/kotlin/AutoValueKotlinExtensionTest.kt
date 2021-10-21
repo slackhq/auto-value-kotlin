@@ -49,7 +49,6 @@ class AutoValueKotlinExtensionTest {
   //  parcelable
   //  nullable primitives
   //  nullable/primitive/collection defaults
-  //  builder placeholders
   //  autoBuild?
   //  getter/setter syntax (what about mixed?)
   //  error: nested
@@ -115,6 +114,9 @@ class AutoValueKotlinExtensionTest {
               abstract Builder aFloat(float value);
               abstract Builder aLong(long value);
               abstract Builder aDouble(double value);
+              Builder defaultValue() {
+                return value("hello");
+              }
               abstract Example build();
             }
           }
@@ -357,6 +359,12 @@ class AutoValueKotlinExtensionTest {
 
             internal fun build(): Example =
                 Example(`value` = `value` ?: error("value == null"), nullableValue = nullableValue, collection = collection ?: error("collection == null"), nullableCollection = nullableCollection, aBoolean = aBoolean, aChar = aChar, aByte = aByte, aShort = aShort, aInt = aInt, aFloat = aFloat, aLong = aLong, aDouble = aDouble)
+ 
+            fun placeholder(): Nothing {
+              // TODO This is a placeholder to mention the following methods need to be moved manually over:
+              //    test.Example.Builder defaultValue(...)
+              TODO()
+            }
           }
 
           companion object {
