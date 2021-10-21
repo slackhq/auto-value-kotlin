@@ -47,7 +47,7 @@ tasks.withType<KotlinCompile>().configureEach {
   kotlinOptions {
     jvmTarget = "1.8"
     @Suppress("SuspiciousCollectionReassignment")
-    freeCompilerArgs += listOf("-progressive", "-Xopt-in=kotlin.RequiresOptIn")
+    freeCompilerArgs += listOf("-progressive", "-Xopt-in=kotlin.RequiresOptIn", "-Xopt-in=com.slack.auto.value.kotlin.ExperimentalAvkApi")
   }
 }
 
