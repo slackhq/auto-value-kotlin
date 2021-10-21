@@ -21,6 +21,7 @@ import com.google.common.truth.Truth.assertAbout
 import com.google.common.truth.Truth.assertThat
 import com.google.testing.compile.CompilationSubject
 import com.google.testing.compile.CompilationSubject.compilations
+import com.google.testing.compile.Compiler
 import com.google.testing.compile.Compiler.javac
 import com.google.testing.compile.JavaFileObjects.forSourceString
 import com.ryanharter.auto.value.moshi.AutoValueMoshiExtension
@@ -1008,9 +1009,71 @@ class AutoValueKotlinExtensionTest {
       )
   }
 
-  private fun compile(vararg sourceFiles: JavaFileObject): CompilationSubject {
+  @Test
+  fun nestedError() {
+    val result = compile(
+      forSourceString(
+        "test.Example",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+          
+          class Outer {
+          
+            @AutoValue
+            abstract static class Inner {
+  
+              abstract String value();
+  
+              abstract String withValue();
+            }
+          }
+        """.trimIndent()
+      )
+    )
+
+    result.failed()
+    result.hadErrorContaining("Cannot convert nested classes to Kotlin safely. Please move this to top-level first.")
+  }
+
+  @Test
+  fun nestedWarning() {
+    val result = compile(
+      forSourceString(
+        "test.Example",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+          
+          class Outer {
+          
+            @AutoValue
+            abstract static class Inner {
+  
+              abstract String value();
+  
+              abstract String withValue();
+            }
+          }
+        """.trimIndent()
+      )
+    ) {
+      withOptions(listOf(compilerSrcOption(), "-A${AutoValueKotlinExtension.OPT_IGNORE_NESTED}=true"))
+    }
+
+    result.succeeded()
+    result.hadWarningContaining("Cannot convert nested classes to Kotlin safely. Please move this to top-level first.")
+  }
+
+  private fun compilerSrcOption(): String {
+    return "-A${AutoValueKotlinExtension.OPT_SRC}=${srcDir.absolutePath}"
+  }
+
+  private fun compile(vararg sourceFiles: JavaFileObject, compilerBody: Compiler.() -> Compiler = { this }): CompilationSubject {
     val compilation = javac()
-      .withOptions("-A${AutoValueKotlinExtension.OPT_SRC}=${srcDir.absolutePath}")
+      .withOptions(compilerSrcOption())
       .withProcessors(
         AutoValueProcessor(
           listOf(
@@ -1022,6 +1085,7 @@ class AutoValueKotlinExtensionTest {
           )
         )
       )
+      .let(compilerBody)
       .compile(*sourceFiles)
     return assertAbout(compilations())
       .that(compilation)
