@@ -1067,6 +1067,44 @@ class AutoValueKotlinExtensionTest {
     result.hadWarningContaining("Cannot convert nested classes to Kotlin safely. Please move this to top-level first.")
   }
 
+  @Test
+  fun targets() {
+    val result = compile(
+      forSourceString(
+        "test.Example",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+
+          @AutoValue
+          abstract class Example {
+            abstract String value();
+          }
+        """.trimIndent()
+      ),
+      forSourceString(
+        "test.IgnoredExample",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+
+          @AutoValue
+          abstract class IgnoredExample {
+            abstract String value();
+          }
+        """.trimIndent()
+      )
+    ) {
+      withOptions(listOf(compilerSrcOption(), "-A${AutoValueKotlinExtension.OPT_TARGETS}=Example"))
+    }
+
+    result.succeeded()
+    assertThat(File(srcDir, "test/Example.kt").exists()).isTrue()
+    assertThat(File(srcDir, "test/IgnoredExample.kt").exists()).isFalse()
+  }
+
   private fun compilerSrcOption(): String {
     return "-A${AutoValueKotlinExtension.OPT_SRC}=${srcDir.absolutePath}"
   }
