@@ -86,6 +86,8 @@ When done with all the migrations, revert the added AVK configuration to your bu
 * Static creators and static builders
 * [auto-value-moshi](https://github.com/rharter/auto-value-moshi)
   * Converts to just using standard Moshi Kotlin code gen
+* [auto-value-parcel](https://github.com/rharter/auto-value-parcel)
+  * Converts to just using [Parcelize](https://developer.android.com/kotlin/parcelize).
 * [auto-value-with](https://github.com/gabrielittner/auto-value-with)
 * [auto-value-redacted](https://github.com/square/auto-value-redacted)
   * Only adds the redacted annotation to the property. Implementation is left to the consumer, we use [redacted-compiler-plugin](https://github.com/ZacSweers/redacted-compiler-plugin).
