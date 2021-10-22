@@ -42,6 +42,7 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.asTypeVariableName
 import com.squareup.moshi.Json
+import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
@@ -49,6 +50,7 @@ import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.type.TypeVariable
+import javax.lang.model.util.Types
 
 internal val NONNULL_ANNOTATIONS = setOf(
   "NonNull",
@@ -57,6 +59,7 @@ internal val NONNULL_ANNOTATIONS = setOf(
 )
 
 internal val PARCELIZE = ClassName("kotlinx.parcelize", "Parcelize")
+
 internal val INTRINSIC_IMPORTS = setOf(
   "import java.lang.String",
   "import java.lang.CharSequence",
@@ -81,12 +84,14 @@ internal const val MAX_PARAMS = 7
 
 internal val JSON_CN = Json::class.asClassName()
 
-internal fun TypeMirror.asSafeTypeName(): TypeName {
+@ExperimentalAvkApi
+public fun TypeMirror.asSafeTypeName(): TypeName {
   return asTypeName().copy(nullable = false).normalize()
 }
 
 @Suppress("ComplexMethod")
-internal fun TypeName.normalize(): TypeName {
+@ExperimentalAvkApi
+public fun TypeName.normalize(): TypeName {
   return when (this) {
     is ClassName -> {
       when (this) {
@@ -110,7 +115,8 @@ internal fun TypeName.normalize(): TypeName {
   }
 }
 
-internal fun TypeElement.classAnnotations(): List<AnnotationSpec> {
+@ExperimentalAvkApi
+public fun TypeElement.classAnnotations(): List<AnnotationSpec> {
   return annotationMirrors
     .map {
       @Suppress("DEPRECATION")
@@ -132,7 +138,8 @@ internal fun TypeElement.classAnnotations(): List<AnnotationSpec> {
     }
 }
 
-internal fun TypeName.defaultPrimitiveValue(): CodeBlock =
+@ExperimentalAvkApi
+public fun TypeName.defaultPrimitiveValue(): CodeBlock =
   when (this) {
     BOOLEAN -> CodeBlock.of("false")
     CHAR -> CodeBlock.of("0.toChar()")
@@ -148,7 +155,8 @@ internal fun TypeName.defaultPrimitiveValue(): CodeBlock =
     else -> CodeBlock.of("null")
   }
 
-internal fun deprecatedAnnotation(message: String, replaceWith: String): AnnotationSpec {
+@ExperimentalAvkApi
+public fun deprecatedAnnotation(message: String, replaceWith: String): AnnotationSpec {
   return AnnotationSpec.builder(Deprecated::class)
     .addMember("message = %S", message)
     .addMember("replaceWith = %T(%S)", ReplaceWith::class, replaceWith)
@@ -156,7 +164,8 @@ internal fun deprecatedAnnotation(message: String, replaceWith: String): Annotat
 }
 
 @Suppress("DEPRECATION", "SpreadOperator")
-internal fun FunSpec.Companion.copyOf(method: ExecutableElement): FunSpec.Builder {
+@ExperimentalAvkApi
+public fun FunSpec.Companion.copyOf(method: ExecutableElement): FunSpec.Builder {
   var modifiers: Set<Modifier> = method.modifiers
 
   val methodName = method.simpleName.toString()
@@ -192,11 +201,13 @@ internal fun FunSpec.Companion.copyOf(method: ExecutableElement): FunSpec.Builde
   return funBuilder
 }
 
-internal fun ParameterSpec.Companion.parametersWithNullabilityOf(method: ExecutableElement): List<ParameterSpec> =
+@ExperimentalAvkApi
+public fun ParameterSpec.Companion.parametersWithNullabilityOf(method: ExecutableElement): List<ParameterSpec> =
   method.parameters.map(ParameterSpec.Companion::getWithNullability)
 
 @Suppress("DEPRECATION")
-internal fun ParameterSpec.Companion.getWithNullability(element: VariableElement): ParameterSpec {
+@ExperimentalAvkApi
+public fun ParameterSpec.Companion.getWithNullability(element: VariableElement): ParameterSpec {
   val name = element.simpleName.toString()
   val isNullable =
     element.annotationMirrors.any { (it.annotationType.asElement() as TypeElement).simpleName.toString() == "Nullable" }
@@ -207,7 +218,8 @@ internal fun ParameterSpec.Companion.getWithNullability(element: VariableElement
 }
 
 /** Cleans up the generated doc and translates some html to equivalent markdown for Kotlin docs. */
-internal fun cleanUpDoc(doc: String): String {
+@ExperimentalAvkApi
+public fun cleanUpDoc(doc: String): String {
   // TODO not covered yet
   //  {@link TimeFormatter#getDateTimeString(SlackDateTime)}
   return doc.replace("<em>", "*")
@@ -247,10 +259,24 @@ internal fun cleanUpDoc(doc: String): String {
     .trim()
 }
 
-internal fun FunSpec.Builder.withDocsFrom(
+@ExperimentalAvkApi
+public fun FunSpec.Builder.withDocsFrom(
   e: Element,
   parseDocs: Element.() -> String?
 ): FunSpec.Builder {
   val doc = e.parseDocs() ?: return this
   return addKdoc(doc)
 }
+
+@ExperimentalAvkApi
+public fun ProcessingEnvironment.isParcelable(element: TypeElement): Boolean {
+  return elementUtils
+    .getTypeElement("android.os.Parcelable")
+    ?.asType()
+    ?.let { parcelableClass ->
+      element.interfaces.any { it.isClassOfType(typeUtils, parcelableClass) }
+    } ?: false
+}
+
+private fun TypeMirror.isClassOfType(types: Types, other: TypeMirror?) =
+  types.isAssignable(this, other)
