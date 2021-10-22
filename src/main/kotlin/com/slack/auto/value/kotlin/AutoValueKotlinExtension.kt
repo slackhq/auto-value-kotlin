@@ -38,9 +38,7 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
-import javax.lang.model.element.Modifier.PUBLIC
 import javax.lang.model.element.NestingKind
-import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.ElementFilter
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
@@ -190,7 +188,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
           annotations = annotations,
           isOverride = isAnOverride,
           isRedacted = isRedacted,
-          visibility = if (PUBLIC in method.modifiers) KModifier.PUBLIC else KModifier.INTERNAL,
+          visibility = if (Modifier.PUBLIC in method.modifiers) KModifier.PUBLIC else KModifier.INTERNAL,
           doc = method.parseDocs()
         )
       }
@@ -200,12 +198,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       // If all the properties are redacted, redacted the class?
       properties.values.all { it.isRedacted }
 
-    val isParcelable = elements
-      .getTypeElement("android.os.Parcelable")
-      ?.asType()
-      ?.let { parcelableClass ->
-        avClass.interfaces.any { it.isClassOfType(types, parcelableClass) }
-      } ?: false
+    val isParcelable = context.processingEnvironment().isParcelable(avClass)
 
     val propertyMethods = context.properties().values.toSet()
 
@@ -409,7 +402,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       packageName = context.packageName(),
       doc = classDoc,
       name = avClass.simpleName.toString(),
-      visibility = if (PUBLIC in avClass.modifiers) KModifier.PUBLIC else KModifier.INTERNAL,
+      visibility = if (Modifier.PUBLIC in avClass.modifiers) KModifier.PUBLIC else KModifier.INTERNAL,
       isRedacted = isClassRedacted,
       isParcelable = isParcelable,
       superClass = superclass,
@@ -429,9 +422,6 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
 
     return null
   }
-
-  private fun TypeMirror.isClassOfType(types: Types, other: TypeMirror?) =
-    types.isAssignable(this, other)
 }
 
 private fun AvkBuilder.Companion.from(
@@ -474,7 +464,7 @@ private fun AvkBuilder.Companion.from(
   return AvkBuilder(
     name = builderContext.builderType().simpleName.toString(),
     doc = builderContext.builderType().parseDocs(),
-    visibility = if (PUBLIC in builderContext.builderType().modifiers) {
+    visibility = if (Modifier.PUBLIC in builderContext.builderType().modifiers) {
       KModifier.PUBLIC
     } else {
       KModifier.INTERNAL
