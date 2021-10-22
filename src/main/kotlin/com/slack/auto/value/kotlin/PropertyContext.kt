@@ -26,6 +26,8 @@ public data class PropertyContext(
   val type: TypeName,
   val annotations: List<AnnotationSpec>,
   val isOverride: Boolean,
+  /** Forces the property to be marked with the override modifier too. */
+  val forcePropertyOverride: Boolean = false,
   val isRedacted: Boolean,
   val visibility: KModifier,
   val doc: String?

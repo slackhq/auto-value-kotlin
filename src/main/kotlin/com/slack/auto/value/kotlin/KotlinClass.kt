@@ -107,6 +107,9 @@ public data class KotlinClass(
             if (!isRedacted && prop.isRedacted && redactedClassName != null) {
               addAnnotation(redactedClassName)
             }
+            if (prop.forcePropertyOverride) {
+              addModifiers(OVERRIDE)
+            }
             prop.doc?.let { addKdoc(it) }
           }
           .build()
