@@ -50,7 +50,7 @@ public data class KotlinClass(
   val isRedacted: Boolean,
   val isParcelable: Boolean,
   val superClass: TypeName?,
-  val interfaces: List<TypeName>,
+  val interfaces: Map<TypeName, CodeBlock?>,
   val typeParams: List<TypeVariableName>,
   val properties: Map<String, PropertyContext>,
   val avkBuilder: AvkBuilder?,
@@ -169,7 +169,13 @@ public data class KotlinClass(
     typeBuilder.primaryConstructor(constructorBuilder.build())
 
     superClass?.let { typeBuilder.superclass(it) }
-    typeBuilder.addSuperinterfaces(interfaces)
+    interfaces.forEach { (supertype, delegate) ->
+      if (delegate == null) {
+        typeBuilder.addSuperinterface(supertype)
+      } else {
+        typeBuilder.addSuperinterface(supertype, delegate)
+      }
+    }
 
     val companionObjectBuilder = TypeSpec.companionObjectBuilder()
       .addProperties(staticConstants)
