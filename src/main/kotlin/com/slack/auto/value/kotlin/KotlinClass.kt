@@ -117,8 +117,7 @@ public data class KotlinClass(
 
       val defaultCodeBlock = when {
         avkBuilder != null -> null // Builders handle the defaults
-        prop.type.isNullable -> CodeBlock.of("null")
-        else -> prop.type.defaultPrimitiveValue().takeIf { it.toString() != "null" }
+        else -> prop.defaultValue
       }
       constructorBuilder.addParameter(
         ParameterSpec.builder(prop.name, prop.type)
