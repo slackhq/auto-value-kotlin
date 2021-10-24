@@ -224,7 +224,6 @@ public data class KotlinClass(
     // Post-process to remove any kotlin intrinsic types
     // Is this wildly inefficient? yes. Does it really matter in our cases? nah
     var prevWasBlank = false
-    @Suppress("MagicNumber")
     outputPath.writeText(
       text
         .lineSequence()
@@ -234,7 +233,7 @@ public data class KotlinClass(
             prevWasBlank = false
             val indent = it.substringBefore("public ")
             it.removePrefix(indent).removePrefix("public ").prependIndent(indent)
-          } else if (it.startsWith("import kotlin.") && it[14].isUpperCase()) {
+          } else if (it.isKotlinPackageImport) {
             // Ignore kotlin implicit imports
             null
           } else if (it.isBlank()) {
@@ -252,6 +251,15 @@ public data class KotlinClass(
         .joinToString("\n")
     )
   }
+
+  /** Best-effort checks if the string is an import from `kotlin.*` */
+  @Suppress("MagicNumber")
+  private val String.isKotlinPackageImport: Boolean get() = startsWith("import kotlin.") &&
+    // Looks like a class
+    // 14 is the length of `import kotlin.`
+    get(14).isUpperCase() &&
+    // Exclude if it's importing a nested element
+    '.' !in removePrefix("import kotlin.")
 
   private fun FileSpec.writeToLocal(directory: Path): Path {
     require(Files.notExists(directory) || Files.isDirectory(directory)) {
