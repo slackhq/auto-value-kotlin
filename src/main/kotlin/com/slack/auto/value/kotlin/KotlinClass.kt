@@ -223,15 +223,29 @@ public data class KotlinClass(
     val text = outputPath.readText()
     // Post-process to remove any kotlin intrinsic types
     // Is this wildly inefficient? yes. Does it really matter in our cases? nah
+    var prevWasBlank = false
+    @Suppress("MagicNumber")
     outputPath.writeText(
       text
         .lineSequence()
         .filterNot { it in INTRINSIC_IMPORTS }
-        .map {
+        .mapNotNull {
           if (it.trimStart().startsWith("public ")) {
+            prevWasBlank = false
             val indent = it.substringBefore("public ")
             it.removePrefix(indent).removePrefix("public ").prependIndent(indent)
+          } else if (it.startsWith("import kotlin.") && it[14].isUpperCase()) {
+            // Ignore kotlin implicit imports
+            null
+          } else if (it.isBlank()) {
+            if (prevWasBlank) {
+              null
+            } else {
+              prevWasBlank = true
+              it
+            }
           } else {
+            prevWasBlank = false
             it
           }
         }

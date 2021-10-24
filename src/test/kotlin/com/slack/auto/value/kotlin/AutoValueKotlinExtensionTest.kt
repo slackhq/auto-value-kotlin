@@ -142,19 +142,6 @@ class AutoValueKotlinExtensionTest {
         import com.slack.auto.`value`.kotlin.Redacted
         import com.squareup.moshi.Json
         import com.squareup.moshi.JsonClass
-        import kotlin.Boolean
-        import kotlin.Byte
-        import kotlin.Char
-        import kotlin.Deprecated
-        import kotlin.Double
-        import kotlin.Float
-        import kotlin.Int
-        import kotlin.Long
-        import kotlin.Nothing
-        import kotlin.ReplaceWith
-        import kotlin.Short
-        import kotlin.String
-        import kotlin.Suppress
         import kotlin.jvm.JvmName
         import kotlin.jvm.JvmStatic
         import kotlin.jvm.JvmSynthetic
@@ -444,9 +431,6 @@ class AutoValueKotlinExtensionTest {
         """
           package test
 
-          import kotlin.Deprecated
-          import kotlin.ReplaceWith
-          import kotlin.String
           import kotlin.jvm.JvmName
           import kotlin.jvm.JvmStatic
           import kotlin.jvm.JvmSynthetic
@@ -517,9 +501,6 @@ class AutoValueKotlinExtensionTest {
         """
           package test
 
-          import kotlin.Deprecated
-          import kotlin.ReplaceWith
-          import kotlin.String
           import kotlin.jvm.JvmName
           import kotlin.jvm.JvmSynthetic
 
@@ -623,17 +604,6 @@ class AutoValueKotlinExtensionTest {
         """
           package test
 
-          import kotlin.Boolean
-          import kotlin.Byte
-          import kotlin.Char
-          import kotlin.Deprecated
-          import kotlin.Double
-          import kotlin.Float
-          import kotlin.Int
-          import kotlin.Long
-          import kotlin.ReplaceWith
-          import kotlin.Short
-          import kotlin.String
           import kotlin.jvm.JvmName
           import kotlin.jvm.JvmSynthetic
 
@@ -1130,8 +1100,6 @@ class AutoValueKotlinExtensionTest {
         """
           package test
 
-          import kotlin.String
-
           data class Example(
             val `value`: String
           )
@@ -1170,9 +1138,6 @@ class AutoValueKotlinExtensionTest {
         """
           package test
 
-          import kotlin.Deprecated
-          import kotlin.ReplaceWith
-          import kotlin.String
           import kotlin.jvm.JvmName
           import kotlin.jvm.JvmSynthetic
 
