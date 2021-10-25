@@ -16,6 +16,7 @@
 package com.slack.auto.value.kotlin
 
 import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.TypeName
 
@@ -30,7 +31,11 @@ public data class PropertyContext(
   val forcePropertyOverride: Boolean = false,
   val isRedacted: Boolean,
   val visibility: KModifier,
-  val doc: String?
+  val doc: String?,
+  val defaultValue: CodeBlock? = when {
+    type.isNullable -> CodeBlock.of("null")
+    else -> type.defaultPrimitiveValue().takeIf { it.toString() != "null" }
+  }
 ) {
   public val usesGet: Boolean = name.startsWith("get") || funName.startsWith("get")
 

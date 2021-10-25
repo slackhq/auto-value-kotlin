@@ -50,7 +50,7 @@ public data class KotlinClass(
   val isRedacted: Boolean,
   val isParcelable: Boolean,
   val superClass: TypeName?,
-  val interfaces: List<TypeName>,
+  val interfaces: Map<TypeName, CodeBlock?>,
   val typeParams: List<TypeVariableName>,
   val properties: Map<String, PropertyContext>,
   val avkBuilder: AvkBuilder?,
@@ -117,8 +117,7 @@ public data class KotlinClass(
 
       val defaultCodeBlock = when {
         avkBuilder != null -> null // Builders handle the defaults
-        prop.type.isNullable -> CodeBlock.of("null")
-        else -> prop.type.defaultPrimitiveValue().takeIf { it.toString() != "null" }
+        else -> prop.defaultValue
       }
       constructorBuilder.addParameter(
         ParameterSpec.builder(prop.name, prop.type)
@@ -169,7 +168,13 @@ public data class KotlinClass(
     typeBuilder.primaryConstructor(constructorBuilder.build())
 
     superClass?.let { typeBuilder.superclass(it) }
-    typeBuilder.addSuperinterfaces(interfaces)
+    interfaces.forEach { (supertype, delegate) ->
+      if (delegate == null) {
+        typeBuilder.addSuperinterface(supertype)
+      } else {
+        typeBuilder.addSuperinterface(supertype, delegate)
+      }
+    }
 
     val companionObjectBuilder = TypeSpec.companionObjectBuilder()
       .addProperties(staticConstants)
@@ -218,21 +223,43 @@ public data class KotlinClass(
     val text = outputPath.readText()
     // Post-process to remove any kotlin intrinsic types
     // Is this wildly inefficient? yes. Does it really matter in our cases? nah
+    var prevWasBlank = false
     outputPath.writeText(
       text
         .lineSequence()
         .filterNot { it in INTRINSIC_IMPORTS }
-        .map {
+        .mapNotNull {
           if (it.trimStart().startsWith("public ")) {
+            prevWasBlank = false
             val indent = it.substringBefore("public ")
             it.removePrefix(indent).removePrefix("public ").prependIndent(indent)
+          } else if (it.isKotlinPackageImport) {
+            // Ignore kotlin implicit imports
+            null
+          } else if (it.isBlank()) {
+            if (prevWasBlank) {
+              null
+            } else {
+              prevWasBlank = true
+              it
+            }
           } else {
+            prevWasBlank = false
             it
           }
         }
         .joinToString("\n")
     )
   }
+
+  /** Best-effort checks if the string is an import from `kotlin.*` */
+  @Suppress("MagicNumber")
+  private val String.isKotlinPackageImport: Boolean get() = startsWith("import kotlin.") &&
+    // Looks like a class
+    // 14 is the length of `import kotlin.`
+    get(14).isUpperCase() &&
+    // Exclude if it's importing a nested element
+    '.' !in removePrefix("import kotlin.")
 
   private fun FileSpec.writeToLocal(directory: Path): Path {
     require(Files.notExists(directory) || Files.isDirectory(directory)) {

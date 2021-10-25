@@ -406,7 +406,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       isRedacted = isClassRedacted,
       isParcelable = isParcelable,
       superClass = superclass,
-      interfaces = avClass.interfaces.map { it.asSafeTypeName() },
+      interfaces = avClass.interfaces.associate { it.asSafeTypeName() to null },
       typeParams = avClass.typeParameters.map { it.asTypeVariableName() },
       properties = properties,
       avkBuilder = avkBuilder,
