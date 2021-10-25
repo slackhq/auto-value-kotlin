@@ -1,6 +1,13 @@
 Changelog
 =========
 
+1.0.2
+-----
+
+_2021-10-25_
+
+* Implicit `kotlin.*` package imports are now stripped since they're redundant.
+
 1.0.1
 -----
 
