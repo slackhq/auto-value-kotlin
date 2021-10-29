@@ -42,6 +42,7 @@ import javax.tools.JavaFileObject.Kind.OTHER
 public class AutoValueKotlinProcessor : AbstractProcessor() {
 
   private val collectedClasses: MutableMap<ClassName, KotlinClass> = ConcurrentHashMap<ClassName, KotlinClass>()
+  private val collectedEnums: MutableMap<ClassName, TypeSpec> = ConcurrentHashMap<ClassName, TypeSpec>()
 
   override fun getSupportedAnnotationTypes(): Set<String> {
     return setOf(AutoValue::class.java.canonicalName)
@@ -83,6 +84,7 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
 
     // Save off our extracted classes
     collectedClasses += avkExtension.collectedKclassees
+    collectedEnums += avkExtension.collectedEnums
 
     // We're done processing, write all our collected classes down
     if (roundEnv.processingOver()) {
@@ -99,11 +101,15 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
   }
 
   private fun composeTypeSpec(kotlinClass: KotlinClass): TypeSpec {
-    // TODO enums
     val spec = kotlinClass.toTypeSpec(NoOpMessager)
     return spec.toBuilder()
       .apply {
         for (child in kotlinClass.children) {
+          val enumChild = collectedEnums.remove(child)
+          if (enumChild != null) {
+            addType(enumChild)
+            continue
+          }
           val childKotlinClass = collectedClasses.remove(child)
             ?: error("Missing child class $child for parent ${kotlinClass.name}")
           addType(composeTypeSpec(childKotlinClass))

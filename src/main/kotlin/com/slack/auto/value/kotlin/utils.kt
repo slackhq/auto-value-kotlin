@@ -63,6 +63,7 @@ import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.type.TypeVariable
+import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.readText
@@ -186,9 +187,11 @@ public fun FunSpec.Companion.copyOf(method: ExecutableElement): FunSpec.Builder 
 
   val methodName = method.simpleName.toString()
   val funBuilder = builder(methodName)
+    .addModifiers(method.visibility)
 
   modifiers = modifiers.toMutableSet()
   modifiers.remove(Modifier.ABSTRACT)
+  funBuilder.jvmModifiers(modifiers)
 
   method.typeParameters
     .map { it.asType() as TypeVariable }
@@ -371,4 +374,12 @@ private fun FileSpec.writeToLocal(directory: Path): Path {
     StandardCharsets.UTF_8
   ).use { writer -> writeTo(writer) }
   return outputPath
+}
+
+@ExperimentalAvkApi
+@Suppress("ReturnCount")
+public fun Element.parseDocs(elements: Elements): String? {
+  val doc = elements.getDocComment(this)?.trim() ?: return null
+  if (doc.isBlank()) return null
+  return cleanUpDoc(doc)
 }

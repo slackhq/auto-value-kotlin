@@ -99,6 +99,12 @@ class AutoValueKotlinExtensionTest {
             static Builder builder() {
               return null;
             }
+            
+            enum ExampleEnum {
+              ENUM_VALUE,
+              @Redacted
+              ANNOTATED_ENUM_VALUE
+            }
 
             @AutoValue.Builder
             abstract static class Builder {
@@ -389,6 +395,12 @@ class AutoValueKotlinExtensionTest {
             internal fun builder(): Builder {
               TODO("Replace this with the implementation from the source class")
             }
+          }
+        
+          internal enum class ExampleEnum {
+            ENUM_VALUE,
+            @Redacted
+            ANNOTATED_ENUM_VALUE,
           }
         }
 

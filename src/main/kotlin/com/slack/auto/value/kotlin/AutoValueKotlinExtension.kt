@@ -28,6 +28,7 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeVariableName
 import com.squareup.kotlinpoet.joinToCode
@@ -36,6 +37,7 @@ import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
+import javax.lang.model.element.ElementKind
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.NestingKind
@@ -56,6 +58,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
   }
 
   internal val collectedKclassees = ConcurrentHashMap<ClassName, KotlinClass>()
+  internal val collectedEnums = ConcurrentHashMap<ClassName, TypeSpec>()
   private lateinit var elements: Elements
   private lateinit var types: Types
 
@@ -76,14 +79,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
   }
 
   private fun FunSpec.Builder.withDocsFrom(e: Element): FunSpec.Builder {
-    return withDocsFrom(e) { parseDocs() }
-  }
-
-  @Suppress("ReturnCount")
-  private fun Element.parseDocs(): String? {
-    val doc = elements.getDocComment(this)?.trim() ?: return null
-    if (doc.isBlank()) return null
-    return cleanUpDoc(doc)
+    return withDocsFrom(e) { parseDocs(elements) }
   }
 
   @Suppress("DEPRECATION", "LongMethod", "ComplexMethod", "NestedBlockDepth", "ReturnCount")
@@ -136,8 +132,10 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
           .orElse(false)
       }
 
-    if (!passThrough && nonBuilderNestedTypes.isNotEmpty()) {
-      nonBuilderNestedTypes.forEach {
+    val (enums, remainingTypes) = nonBuilderNestedTypes.partition { it.kind == ElementKind.ENUM }
+
+    if (!passThrough && remainingTypes.isNotEmpty()) {
+      remainingTypes.forEach {
         context.processingEnvironment().messager
           .printMessage(
             Diagnostic.Kind.ERROR,
@@ -148,7 +146,16 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       return null
     }
 
-    val classDoc = avClass.parseDocs()
+    for (enumType in enums) {
+      val (cn, spec) = EnumConversion.convert(
+        elements,
+        context.processingEnvironment().messager,
+        enumType
+      ) ?: continue
+      collectedEnums[cn] = spec
+    }
+
+    val classDoc = avClass.parseDocs(elements)
 
     var redactedClassName: ClassName? = null
 
@@ -197,7 +204,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
           isOverride = isAnOverride,
           isRedacted = isRedacted,
           visibility = if (Modifier.PUBLIC in method.modifiers) KModifier.PUBLIC else KModifier.INTERNAL,
-          doc = method.parseDocs()
+          doc = method.parseDocs(elements)
         )
       }
 
@@ -237,14 +244,13 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       // Note we don't use context.propertyTypes() here because it doesn't contain nullability
       // info, which we did capture
       val propertyTypes = properties.mapValues { it.value.type }
-      avkBuilder = AvkBuilder.from(builder, propertyTypes) { parseDocs() }
+      avkBuilder = AvkBuilder.from(builder, propertyTypes) { parseDocs(elements) }
 
       builderFactories += builder.builderMethods()
       builderFactorySpecs += builder.builderMethods()
         .map {
           FunSpec.copyOf(it)
             .withDocsFrom(it)
-            .addModifiers(avkBuilder.visibility)
             .addStatement("TODO(%S)", "Replace this with the implementation from the source class")
             .build()
         }
@@ -395,7 +401,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
               initializer("TODO()")
             }
 
-            field.parseDocs()?.let { addKdoc(it) }
+            field.parseDocs(elements)?.let { addKdoc(it) }
           }
           .build()
       }
@@ -438,6 +444,8 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       isTopLevel = isTopLevel,
       children = ElementFilter.typesIn(context.autoValueClass().enclosedElements)
         .filterNot(isBuilder)
+        // Filter out collected enums
+        .filterNot { collectedEnums.contains(it.asClassName()) }
         .mapTo(LinkedHashSet()) { it.asClassName() }
     )
 
