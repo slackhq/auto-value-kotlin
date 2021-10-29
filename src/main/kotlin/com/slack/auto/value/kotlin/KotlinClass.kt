@@ -19,7 +19,6 @@ import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.AnnotationSpec.UseSiteTarget.GET
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.KModifier.DATA
@@ -31,15 +30,7 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
-import java.io.File
-import java.io.OutputStreamWriter
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Path
 import javax.annotation.processing.Messager
-import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
 
 @ExperimentalAvkApi
 public data class KotlinClass(
@@ -62,6 +53,8 @@ public data class KotlinClass(
   val classAnnotations: List<AnnotationSpec>,
   val redactedClassName: ClassName?,
   val staticConstants: List<PropertySpec>,
+  val isTopLevel: Boolean,
+  val children: Set<ClassName>
 ) {
   @Suppress("LongMethod", "ComplexMethod")
   public fun toTypeSpec(messager: Messager): TypeSpec {

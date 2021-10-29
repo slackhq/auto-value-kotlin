@@ -17,7 +17,6 @@
 
 package com.slack.auto.value.kotlin
 
-import com.google.auto.service.AutoService
 import com.google.auto.value.extension.AutoValueExtension
 import com.google.auto.value.extension.AutoValueExtension.BuilderContext
 import com.slack.auto.value.kotlin.AvkBuilder.BuilderProperty
@@ -34,17 +33,18 @@ import com.squareup.kotlinpoet.asTypeVariableName
 import com.squareup.kotlinpoet.joinToCode
 import com.squareup.moshi.Json
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.NestingKind
+import javax.lang.model.element.TypeElement
 import javax.lang.model.util.ElementFilter
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 import javax.tools.Diagnostic
 
-@AutoService(AutoValueExtension::class)
 public class AutoValueKotlinExtension : AutoValueExtension() {
 
   public companion object {
@@ -52,8 +52,10 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
     public const val OPT_SRC: String = "avkSrc"
     public const val OPT_TARGETS: String = "avkTargets"
     public const val OPT_IGNORE_NESTED: String = "avkIgnoreNested"
+    public const val OPT_PASSTHROUGH: String = "avkPassThrough"
   }
 
+  internal val collectedKclassees = ConcurrentHashMap<ClassName, KotlinClass>()
   private lateinit var elements: Elements
   private lateinit var types: Types
 
@@ -99,13 +101,17 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
     val ignoreNested =
       context.processingEnvironment().options[OPT_IGNORE_NESTED]?.toBoolean() ?: false
 
+    val passThrough =
+      context.processingEnvironment().options[OPT_PASSTHROUGH]?.toBoolean() ?: false
+
     if (targetClasses.isNotEmpty() && context.autoValueClass().simpleName.toString() !in targetClasses) {
       return null
     }
 
     val avClass = context.autoValueClass()
 
-    if (avClass.nestingKind != NestingKind.TOP_LEVEL) {
+    val isTopLevel = avClass.nestingKind == NestingKind.TOP_LEVEL
+    if (!isTopLevel) {
       val diagnosticKind = if (ignoreNested) {
         Diagnostic.Kind.WARNING
       } else {
@@ -117,7 +123,9 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
           "Cannot convert nested classes to Kotlin safely. Please move this to top-level first.",
           avClass
         )
-      return null
+      if (!passThrough) {
+        return null
+      }
     }
 
     // Check for non-builder nested classes, which cannot be converted with this
@@ -128,7 +136,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
           .orElse(false)
       }
 
-    if (nonBuilderNestedTypes.isNotEmpty()) {
+    if (!passThrough && nonBuilderNestedTypes.isNotEmpty()) {
       nonBuilderNestedTypes.forEach {
         context.processingEnvironment().messager
           .printMessage(
@@ -398,7 +406,16 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
     val srcDir =
       context.processingEnvironment().options[OPT_SRC] ?: error("Missing src dir option")
 
-    KotlinClass(
+    val isBuilder: (TypeElement) -> Boolean = if (avkBuilder != null) {
+      {
+        it == context.builder().get().builderType()
+      }
+    } else {
+      {
+        false
+      }
+    }
+    val kClass = KotlinClass(
       packageName = context.packageName(),
       doc = classDoc,
       name = avClass.simpleName.toString(),
@@ -417,8 +434,18 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       remainingMethods = remainingMethods,
       classAnnotations = avClass.classAnnotations(),
       redactedClassName = redactedClassName,
-      staticConstants = staticConstants
-    ).writeTo(srcDir, context.processingEnvironment().messager)
+      staticConstants = staticConstants,
+      isTopLevel = isTopLevel,
+      children = ElementFilter.typesIn(context.autoValueClass().enclosedElements)
+        .filterNot(isBuilder)
+        .mapTo(LinkedHashSet()) { it.asClassName() }
+    )
+
+    if (passThrough) {
+      collectedKclassees[context.autoValueClass().asClassName()] = kClass
+    } else {
+      kClass.toTypeSpec(context.processingEnvironment().messager).writeCleanlyTo(kClass.packageName, srcDir)
+    }
 
     return null
   }
