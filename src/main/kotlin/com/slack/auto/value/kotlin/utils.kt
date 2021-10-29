@@ -231,7 +231,6 @@ public fun ParameterSpec.Companion.getWithNullability(element: VariableElement):
     element.annotationMirrors.any { (it.annotationType.asElement() as TypeElement).simpleName.toString() == "Nullable" }
   val type = element.asType().asSafeTypeName().copy(nullable = isNullable)
   return builder(name, type)
-    .jvmModifiers(element.modifiers)
     .build()
 }
 
