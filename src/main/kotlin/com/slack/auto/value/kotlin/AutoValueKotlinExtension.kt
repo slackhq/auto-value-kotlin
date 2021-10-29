@@ -38,6 +38,7 @@ import com.squareup.kotlinpoet.joinToCode
 import com.squareup.moshi.Json
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+import javax.annotation.processing.Messager
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
@@ -49,7 +50,7 @@ import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 import javax.tools.Diagnostic
 
-public class AutoValueKotlinExtension : AutoValueExtension() {
+public class AutoValueKotlinExtension(private val realMessager: Messager) : AutoValueExtension() {
 
   public companion object {
     // Options
@@ -113,7 +114,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
         } else {
           Diagnostic.Kind.ERROR
         }
-        context.processingEnvironment().messager
+        realMessager
           .printMessage(
             diagnosticKind,
             "Cannot convert nested classes to Kotlin safely. Please move this to top-level first.",
@@ -136,7 +137,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
 
     if (remainingTypes.isNotEmpty()) {
       remainingTypes.forEach {
-        context.processingEnvironment().messager
+        realMessager
           .printMessage(
             Diagnostic.Kind.ERROR,
             "Cannot convert non-autovalue nested classes to Kotlin safely. Please move this to top-level first.",
@@ -149,7 +150,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
     for (enumType in enums) {
       val (cn, spec) = EnumConversion.convert(
         elements,
-        context.processingEnvironment().messager,
+        realMessager,
         enumType
       ) ?: continue
       collectedEnums[cn] = spec

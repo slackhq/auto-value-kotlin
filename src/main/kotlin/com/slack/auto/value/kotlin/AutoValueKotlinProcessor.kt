@@ -33,10 +33,13 @@ import java.util.ServiceLoader
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
+import javax.annotation.processing.Messager
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
+import javax.lang.model.element.AnnotationMirror
+import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.Modifier.PUBLIC
@@ -77,11 +80,13 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
     }
 
     // Make our extension
-    val avkExtension = AutoValueKotlinExtension()
+    val avkExtension = AutoValueKotlinExtension(processingEnv.messager)
 
     // Create an in-memory av processor and run it
     val avProcessor = AutoValueProcessor(extensions + avkExtension)
     avProcessor.init(object : ProcessingEnvironment by processingEnv {
+      override fun getMessager(): Messager = NoOpMessager
+
       override fun getFiler(): Filer = NoOpFiler
     })
     avProcessor.process(annotations, roundEnv)
@@ -120,6 +125,34 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
         }
       }
       .build()
+  }
+}
+
+private object NoOpMessager : Messager {
+  override fun printMessage(kind: Kind?, msg: CharSequence?) {
+    // Do nothing
+  }
+
+  override fun printMessage(
+    kind: Kind,
+    msg: CharSequence,
+    element: Element?
+  ) {
+    // Do nothing
+  }
+
+  override fun printMessage(kind: Kind?, msg: CharSequence?, e: Element?, a: AnnotationMirror?) {
+    // Do nothing
+  }
+
+  override fun printMessage(
+    kind: Kind?,
+    msg: CharSequence?,
+    e: Element?,
+    a: AnnotationMirror?,
+    v: AnnotationValue?
+  ) {
+    // Do nothing
   }
 }
 
