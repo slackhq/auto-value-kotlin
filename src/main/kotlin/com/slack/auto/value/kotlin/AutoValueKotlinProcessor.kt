@@ -69,6 +69,7 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
     roundEnv: RoundEnvironment
   ): Boolean {
     // Load extensions ourselves
+    @Suppress("TooGenericExceptionCaught", "SwallowedException")
     val extensions = try {
       ServiceLoader.load(AutoValueExtension::class.java).toList()
     } catch (e: Exception) {
@@ -122,6 +123,7 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
   }
 }
 
+@Suppress("TooManyFunctions")
 private class NoOpJfo(
   private val name: String,
   private val kind: JavaFileObject.Kind = JavaFileObject.Kind.SOURCE
