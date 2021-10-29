@@ -23,7 +23,6 @@ import com.google.testing.compile.Compiler
 import com.google.testing.compile.Compiler.javac
 import com.google.testing.compile.JavaFileObjects.forSourceString
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -99,7 +98,7 @@ class AutoValueKotlinExtensionTest {
             static Builder builder() {
               return null;
             }
-            
+
             enum ExampleEnum {
               ENUM_VALUE,
               @Redacted
@@ -396,7 +395,7 @@ class AutoValueKotlinExtensionTest {
               TODO("Replace this with the implementation from the source class")
             }
           }
-        
+
           internal enum class ExampleEnum {
             ENUM_VALUE,
             @Redacted
@@ -986,7 +985,6 @@ class AutoValueKotlinExtensionTest {
       )
   }
 
-  // TODO add an enum here too
   @Test
   fun nestedClasses() {
     val result = compile(
@@ -996,10 +994,10 @@ class AutoValueKotlinExtensionTest {
           package test;
 
           import com.google.auto.value.AutoValue;
-          
+
           @AutoValue
           abstract class Outer {
-          
+
             abstract String outerValue();
 
             @AutoValue
@@ -1021,10 +1019,10 @@ class AutoValueKotlinExtensionTest {
       .isEqualTo(
         """
           package test
-    
+
           import kotlin.jvm.JvmName
           import kotlin.jvm.JvmSynthetic
-          
+
           data class Outer(
             @get:JvmName("outerValue")
             val outerValue: String
@@ -1039,7 +1037,7 @@ class AutoValueKotlinExtensionTest {
               outerValue()
               TODO("Remove this function. Use the above line to auto-migrate.")
             }
-          
+
             data class Inner(
               @get:JvmName("value")
               val `value`: String,
@@ -1056,7 +1054,7 @@ class AutoValueKotlinExtensionTest {
                 `value`()
                 TODO("Remove this function. Use the above line to auto-migrate.")
               }
-          
+
               @JvmSynthetic
               @JvmName("-withValue")
               @Deprecated(
@@ -1067,23 +1065,17 @@ class AutoValueKotlinExtensionTest {
                 withValue()
                 TODO("Remove this function. Use the above line to auto-migrate.")
               }
-          
+
               fun withValue(`value`: String): Inner = copy(`value` = `value`)
             }
           }
-          
+
         """.trimIndent()
       )
   }
 
-  // TODO nested is now
-  //  auto outer, non-auto inner
-  //  non-auto outer, auto inner
-  //  warning option
-
-  @Ignore("")
   @Test
-  fun nestedError() {
+  fun nestedError_outerNonAuto() {
     val result = compile(
       forSourceString(
         "test.Outer",
@@ -1110,7 +1102,35 @@ class AutoValueKotlinExtensionTest {
     result.hadErrorContaining("Cannot convert nested classes to Kotlin safely. Please move this to top-level first.")
   }
 
-  @Ignore("")
+  @Test
+  fun nestedError_innerNonAuto() {
+    val result = compile(
+      forSourceString(
+        "test.Outer",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+
+          @AutoValue
+          abstract class Outer {
+
+            abstract String value();
+
+            abstract String withValue();
+
+            static class Inner {
+
+            }
+          }
+        """.trimIndent()
+      )
+    )
+
+    result.failed()
+    result.hadErrorContaining("Cannot convert non-autovalue nested classes to Kotlin safely. Please move this to top-level first.")
+  }
+
   @Test
   fun nestedWarning() {
     val result = compile(

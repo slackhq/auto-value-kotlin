@@ -17,6 +17,9 @@
 
 package com.slack.auto.value.kotlin
 
+import com.google.auto.common.MoreElements
+import com.google.auto.common.MoreElements.isAnnotationPresent
+import com.google.auto.value.AutoValue
 import com.google.auto.value.extension.AutoValueExtension
 import com.google.auto.value.extension.AutoValueExtension.BuilderContext
 import com.slack.auto.value.kotlin.AvkBuilder.BuilderProperty
@@ -41,7 +44,6 @@ import javax.lang.model.element.ElementKind
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.NestingKind
-import javax.lang.model.element.TypeElement
 import javax.lang.model.util.ElementFilter
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
@@ -54,7 +56,6 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
     public const val OPT_SRC: String = "avkSrc"
     public const val OPT_TARGETS: String = "avkTargets"
     public const val OPT_IGNORE_NESTED: String = "avkIgnoreNested"
-    public const val OPT_PASSTHROUGH: String = "avkPassThrough"
   }
 
   internal val collectedKclassees = ConcurrentHashMap<ClassName, KotlinClass>()
@@ -89,18 +90,12 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
     classToExtend: String,
     isFinal: Boolean
   ): String? {
-    val targetClasses = context.processingEnvironment().options[OPT_TARGETS]
-      ?.splitToSequence(":")
-      ?.toSet()
-      ?: emptySet()
+    val options = Options(context.processingEnvironment().options)
 
     val ignoreNested =
       context.processingEnvironment().options[OPT_IGNORE_NESTED]?.toBoolean() ?: false
 
-    val passThrough =
-      context.processingEnvironment().options[OPT_PASSTHROUGH]?.toBoolean() ?: false
-
-    if (targetClasses.isNotEmpty() && context.autoValueClass().simpleName.toString() !in targetClasses) {
+    if (options.targets.isNotEmpty() && context.autoValueClass().simpleName.toString() !in options.targets) {
       return null
     }
 
@@ -108,19 +103,22 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
 
     val isTopLevel = avClass.nestingKind == NestingKind.TOP_LEVEL
     if (!isTopLevel) {
-      val diagnosticKind = if (ignoreNested) {
-        Diagnostic.Kind.WARNING
-      } else {
-        Diagnostic.Kind.ERROR
-      }
-      context.processingEnvironment().messager
-        .printMessage(
-          diagnosticKind,
-          "Cannot convert nested classes to Kotlin safely. Please move this to top-level first.",
-          avClass
-        )
-      if (!passThrough) {
-        return null
+      val isParentAv = isAnnotationPresent(
+        MoreElements.asType(avClass.enclosingElement),
+        AutoValue::class.java
+      )
+      if (!isParentAv) {
+        val diagnosticKind = if (ignoreNested) {
+          Diagnostic.Kind.WARNING
+        } else {
+          Diagnostic.Kind.ERROR
+        }
+        context.processingEnvironment().messager
+          .printMessage(
+            diagnosticKind,
+            "Cannot convert nested classes to Kotlin safely. Please move this to top-level first.",
+            avClass
+          )
       }
     }
 
@@ -132,14 +130,16 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
           .orElse(false)
       }
 
-    val (enums, remainingTypes) = nonBuilderNestedTypes.partition { it.kind == ElementKind.ENUM }
+    val (enums, nonEnums) = nonBuilderNestedTypes.partition { it.kind == ElementKind.ENUM }
 
-    if (!passThrough && remainingTypes.isNotEmpty()) {
+    val (nestedAvClasses, remainingTypes) = nonEnums.partition { isAnnotationPresent(it, AutoValue::class.java) }
+
+    if (remainingTypes.isNotEmpty()) {
       remainingTypes.forEach {
         context.processingEnvironment().messager
           .printMessage(
             Diagnostic.Kind.ERROR,
-            "Cannot convert nested classes to Kotlin safely. Please move this to top-level first.",
+            "Cannot convert non-autovalue nested classes to Kotlin safely. Please move this to top-level first.",
             it
           )
       }
@@ -409,18 +409,6 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
     val superclass = avClass.superclass.asSafeTypeName()
       .takeUnless { it == ClassName("java.lang", "Object") }
 
-    val srcDir =
-      context.processingEnvironment().options[OPT_SRC] ?: error("Missing src dir option")
-
-    val isBuilder: (TypeElement) -> Boolean = if (avkBuilder != null) {
-      {
-        it == context.builder().get().builderType()
-      }
-    } else {
-      {
-        false
-      }
-    }
     val kClass = KotlinClass(
       packageName = context.packageName(),
       doc = classDoc,
@@ -442,18 +430,12 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       redactedClassName = redactedClassName,
       staticConstants = staticConstants,
       isTopLevel = isTopLevel,
-      children = ElementFilter.typesIn(context.autoValueClass().enclosedElements)
-        .filterNot(isBuilder)
-        // Filter out collected enums
-        .filterNot { collectedEnums.contains(it.asClassName()) }
+      children = nestedAvClasses
         .mapTo(LinkedHashSet()) { it.asClassName() }
+        .plus(collectedEnums.keys)
     )
 
-    if (passThrough) {
-      collectedKclassees[context.autoValueClass().asClassName()] = kClass
-    } else {
-      kClass.toTypeSpec(context.processingEnvironment().messager).writeCleanlyTo(kClass.packageName, srcDir)
-    }
+    collectedKclassees[context.autoValueClass().asClassName()] = kClass
 
     return null
   }

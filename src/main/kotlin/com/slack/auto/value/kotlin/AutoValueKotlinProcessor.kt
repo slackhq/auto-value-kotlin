@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2021 Slack Technologies, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.slack.auto.value.kotlin
 
 import com.google.auto.service.AutoService
@@ -18,13 +33,10 @@ import java.util.ServiceLoader
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
-import javax.annotation.processing.Messager
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
-import javax.lang.model.element.AnnotationMirror
-import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.Modifier.PUBLIC
@@ -56,7 +68,6 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
     annotations: Set<TypeElement>,
     roundEnv: RoundEnvironment
   ): Boolean {
-    // TODO should all these be done in init and re-used?
     // Load extensions ourselves
     val extensions = try {
       ServiceLoader.load(AutoValueExtension::class.java).toList()
@@ -69,15 +80,7 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
 
     // Create an in-memory av processor and run it
     val avProcessor = AutoValueProcessor(extensions + avkExtension)
-    val adjustedOptions = processingEnv.options + mapOf(
-      AutoValueKotlinExtension.OPT_IGNORE_NESTED to "true",
-      AutoValueKotlinExtension.OPT_PASSTHROUGH to "true",
-    )
     avProcessor.init(object : ProcessingEnvironment by processingEnv {
-      override fun getOptions(): Map<String, String> = adjustedOptions
-
-      override fun getMessager(): Messager = NoOpMessager
-
       override fun getFiler(): Filer = NoOpFiler
     })
     avProcessor.process(annotations, roundEnv)
@@ -101,7 +104,7 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
   }
 
   private fun composeTypeSpec(kotlinClass: KotlinClass): TypeSpec {
-    val spec = kotlinClass.toTypeSpec(NoOpMessager)
+    val spec = kotlinClass.toTypeSpec(processingEnv.messager)
     return spec.toBuilder()
       .apply {
         for (child in kotlinClass.children) {
@@ -117,27 +120,6 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
       }
       .build()
   }
-}
-
-private object NoOpMessager : Messager {
-  override fun printMessage(kind: Kind?, msg: CharSequence?) {
-  }
-
-  override fun printMessage(kind: Kind?, msg: CharSequence?, e: Element?) {
-  }
-
-  override fun printMessage(kind: Kind?, msg: CharSequence?, e: Element?, a: AnnotationMirror?) {
-  }
-
-  override fun printMessage(
-    kind: Kind?,
-    msg: CharSequence?,
-    e: Element?,
-    a: AnnotationMirror?,
-    v: AnnotationValue?
-  ) {
-  }
-
 }
 
 private class NoOpJfo(
@@ -195,7 +177,6 @@ private class NoOpJfo(
   override fun getAccessLevel(): Modifier {
     return PUBLIC
   }
-
 }
 
 private object NoOpFiler : Filer {
