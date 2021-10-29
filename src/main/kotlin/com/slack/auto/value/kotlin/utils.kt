@@ -174,7 +174,6 @@ public fun FunSpec.Companion.copyOf(method: ExecutableElement): FunSpec.Builder 
 
   modifiers = modifiers.toMutableSet()
   modifiers.remove(Modifier.ABSTRACT)
-  funBuilder.jvmModifiers(modifiers)
 
   method.typeParameters
     .map { it.asType() as TypeVariable }
