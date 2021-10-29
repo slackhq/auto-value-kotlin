@@ -402,7 +402,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       packageName = context.packageName(),
       doc = classDoc,
       name = avClass.simpleName.toString(),
-      visibility = if (Modifier.PUBLIC in avClass.modifiers) KModifier.PUBLIC else KModifier.INTERNAL,
+      visibility = avClass.visibility,
       isRedacted = isClassRedacted,
       isParcelable = isParcelable,
       superClass = superclass,
@@ -464,11 +464,7 @@ private fun AvkBuilder.Companion.from(
   return AvkBuilder(
     name = builderContext.builderType().simpleName.toString(),
     doc = builderContext.builderType().parseDocs(),
-    visibility = if (Modifier.PUBLIC in builderContext.builderType().modifiers) {
-      KModifier.PUBLIC
-    } else {
-      KModifier.INTERNAL
-    },
+    visibility = builderContext.builderType().visibility,
     builderProps = props,
     buildFun = builderContext.buildMethod()
       .map {
