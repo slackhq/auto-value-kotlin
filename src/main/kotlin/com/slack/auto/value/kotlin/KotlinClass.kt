@@ -19,7 +19,6 @@ import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.AnnotationSpec.UseSiteTarget.GET
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.KModifier.DATA
@@ -31,15 +30,7 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
-import java.io.File
-import java.io.OutputStreamWriter
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Path
 import javax.annotation.processing.Messager
-import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
 
 @ExperimentalAvkApi
 public data class KotlinClass(
@@ -62,10 +53,11 @@ public data class KotlinClass(
   val classAnnotations: List<AnnotationSpec>,
   val redactedClassName: ClassName?,
   val staticConstants: List<PropertySpec>,
+  val isTopLevel: Boolean,
+  val children: Set<ClassName>
 ) {
   @Suppress("LongMethod", "ComplexMethod")
-  @OptIn(ExperimentalPathApi::class)
-  public fun writeTo(dir: String, messager: Messager) {
+  public fun toTypeSpec(messager: Messager): TypeSpec {
     val typeBuilder = TypeSpec.classBuilder(name)
       .addModifiers(DATA)
       .addAnnotations(classAnnotations)
@@ -217,69 +209,7 @@ public data class KotlinClass(
       typeBuilder.addType(companionObjectBuilder.build())
     }
 
-    val file = File(dir).toPath()
-    val outputPath = FileSpec.get(packageName, typeBuilder.build())
-      .writeToLocal(file)
-    val text = outputPath.readText()
-    // Post-process to remove any kotlin intrinsic types
-    // Is this wildly inefficient? yes. Does it really matter in our cases? nah
-    var prevWasBlank = false
-    outputPath.writeText(
-      text
-        .lineSequence()
-        .filterNot { it in INTRINSIC_IMPORTS }
-        .mapNotNull {
-          if (it.trimStart().startsWith("public ")) {
-            prevWasBlank = false
-            val indent = it.substringBefore("public ")
-            it.removePrefix(indent).removePrefix("public ").prependIndent(indent)
-          } else if (it.isKotlinPackageImport) {
-            // Ignore kotlin implicit imports
-            null
-          } else if (it.isBlank()) {
-            if (prevWasBlank) {
-              null
-            } else {
-              prevWasBlank = true
-              it
-            }
-          } else {
-            prevWasBlank = false
-            it
-          }
-        }
-        .joinToString("\n")
-    )
-  }
-
-  /** Best-effort checks if the string is an import from `kotlin.*` */
-  @Suppress("MagicNumber")
-  private val String.isKotlinPackageImport: Boolean get() = startsWith("import kotlin.") &&
-    // Looks like a class
-    // 14 is the length of `import kotlin.`
-    get(14).isUpperCase() &&
-    // Exclude if it's importing a nested element
-    '.' !in removePrefix("import kotlin.")
-
-  private fun FileSpec.writeToLocal(directory: Path): Path {
-    require(Files.notExists(directory) || Files.isDirectory(directory)) {
-      "path $directory exists but is not a directory."
-    }
-    var srcDirectory = directory
-    if (packageName.isNotEmpty()) {
-      for (packageComponent in packageName.split('.').dropLastWhile { it.isEmpty() }) {
-        srcDirectory = srcDirectory.resolve(packageComponent)
-      }
-    }
-
-    Files.createDirectories(srcDirectory)
-
-    val outputPath = srcDirectory.resolve("$name.kt")
-    OutputStreamWriter(
-      Files.newOutputStream(outputPath),
-      StandardCharsets.UTF_8
-    ).use { writer -> writeTo(writer) }
-    return outputPath
+    return typeBuilder.build()
   }
 
   // Public for extension

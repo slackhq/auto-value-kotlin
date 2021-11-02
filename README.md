@@ -1,10 +1,8 @@
 AutoValue Kotlin
 ================
 
-auto-value-kotlin (AVK) is an [AutoValue](https://github.com/google/auto) extension that generates
-binary-and-source-compatible, equivalent Kotlin `data` classes. This is intended to help migrations
-by doing 95% of the work and just letting the developer come through and clean up the generated file
-as-needed.
+auto-value-kotlin (AVK) is an [AutoValue](https://github.com/google/auto) extension + processor
+that generates binary-and-source-compatible, equivalent Kotlin `data` classes.
 
 The intended use of this project is to ease migration from AutoValue classes to Kotlin data classes
 and should be used ad-hoc rather than continuously. The idea is that it does 95% of the work for you
@@ -38,9 +36,10 @@ kapt {
     arg("avkTargets", "ClassOne:ClassTwo")
 
     // Boolean option to ignore nested classes. By default, AVK will error out when it encounters
-    // a nested AutoValue class as it has no means of safely converting the class since its
+    // a nested non-AutoValue class as it has no means of safely converting the class since its
     // references are always qualified. This option can be set to true to make AVK just skip them
     // and emit a warning.
+    // AVK will automatically convert nested AutoValue and enum classes along the way.
     // OPTIONAL. False by default.
     arg("avkIgnoreNested", "true")
   }
@@ -50,8 +49,8 @@ kapt {
 ## Workflow
 
 _Pre-requisites_
-* Move any nested AutoValue classes to top-level first (even if just temporarily for the migration).
-  * You can optionally choose to ignore nested classes or only specific targets per the configuration
+* Move any nested non-AutoValue/non-enum classes to top-level first (even if just temporarily for the migration).
+  * You can optionally choose to ignore nested non-AutoValue classes or only specific targets per the configuration
     options detailed in the Installation section above.
 * Ensure no classes outside of the original AutoValue class accesses its generated `AutoValue_` class.
 * Clean once to clear up any generated file references.

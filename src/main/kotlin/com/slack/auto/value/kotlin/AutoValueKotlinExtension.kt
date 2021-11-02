@@ -17,7 +17,9 @@
 
 package com.slack.auto.value.kotlin
 
-import com.google.auto.service.AutoService
+import com.google.auto.common.MoreElements
+import com.google.auto.common.MoreElements.isAnnotationPresent
+import com.google.auto.value.AutoValue
 import com.google.auto.value.extension.AutoValueExtension
 import com.google.auto.value.extension.AutoValueExtension.BuilderContext
 import com.slack.auto.value.kotlin.AvkBuilder.BuilderProperty
@@ -29,13 +31,17 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeVariableName
 import com.squareup.kotlinpoet.joinToCode
 import com.squareup.moshi.Json
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
+import javax.annotation.processing.Messager
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
+import javax.lang.model.element.ElementKind
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.NestingKind
@@ -44,8 +50,7 @@ import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 import javax.tools.Diagnostic
 
-@AutoService(AutoValueExtension::class)
-public class AutoValueKotlinExtension : AutoValueExtension() {
+public class AutoValueKotlinExtension(private val realMessager: Messager) : AutoValueExtension() {
 
   public companion object {
     // Options
@@ -54,6 +59,8 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
     public const val OPT_IGNORE_NESTED: String = "avkIgnoreNested"
   }
 
+  internal val collectedKclassees = ConcurrentHashMap<ClassName, KotlinClass>()
+  internal val collectedEnums = ConcurrentHashMap<ClassName, TypeSpec>()
   private lateinit var elements: Elements
   private lateinit var types: Types
 
@@ -74,14 +81,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
   }
 
   private fun FunSpec.Builder.withDocsFrom(e: Element): FunSpec.Builder {
-    return withDocsFrom(e) { parseDocs() }
-  }
-
-  @Suppress("ReturnCount")
-  private fun Element.parseDocs(): String? {
-    val doc = elements.getDocComment(this)?.trim() ?: return null
-    if (doc.isBlank()) return null
-    return cleanUpDoc(doc)
+    return withDocsFrom(e) { parseDocs(elements) }
   }
 
   @Suppress("DEPRECATION", "LongMethod", "ComplexMethod", "NestedBlockDepth", "ReturnCount")
@@ -91,33 +91,36 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
     classToExtend: String,
     isFinal: Boolean
   ): String? {
-    val targetClasses = context.processingEnvironment().options[OPT_TARGETS]
-      ?.splitToSequence(":")
-      ?.toSet()
-      ?: emptySet()
+    val options = Options(context.processingEnvironment().options)
 
     val ignoreNested =
       context.processingEnvironment().options[OPT_IGNORE_NESTED]?.toBoolean() ?: false
 
-    if (targetClasses.isNotEmpty() && context.autoValueClass().simpleName.toString() !in targetClasses) {
+    if (options.targets.isNotEmpty() && context.autoValueClass().simpleName.toString() !in options.targets) {
       return null
     }
 
     val avClass = context.autoValueClass()
 
-    if (avClass.nestingKind != NestingKind.TOP_LEVEL) {
-      val diagnosticKind = if (ignoreNested) {
-        Diagnostic.Kind.WARNING
-      } else {
-        Diagnostic.Kind.ERROR
+    val isTopLevel = avClass.nestingKind == NestingKind.TOP_LEVEL
+    if (!isTopLevel) {
+      val isParentAv = isAnnotationPresent(
+        MoreElements.asType(avClass.enclosingElement),
+        AutoValue::class.java
+      )
+      if (!isParentAv) {
+        val diagnosticKind = if (ignoreNested) {
+          Diagnostic.Kind.WARNING
+        } else {
+          Diagnostic.Kind.ERROR
+        }
+        realMessager
+          .printMessage(
+            diagnosticKind,
+            "Cannot convert nested classes to Kotlin safely. Please move this to top-level first.",
+            avClass
+          )
       }
-      context.processingEnvironment().messager
-        .printMessage(
-          diagnosticKind,
-          "Cannot convert nested classes to Kotlin safely. Please move this to top-level first.",
-          avClass
-        )
-      return null
     }
 
     // Check for non-builder nested classes, which cannot be converted with this
@@ -128,19 +131,32 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
           .orElse(false)
       }
 
-    if (nonBuilderNestedTypes.isNotEmpty()) {
-      nonBuilderNestedTypes.forEach {
-        context.processingEnvironment().messager
+    val (enums, nonEnums) = nonBuilderNestedTypes.partition { it.kind == ElementKind.ENUM }
+
+    val (nestedAvClasses, remainingTypes) = nonEnums.partition { isAnnotationPresent(it, AutoValue::class.java) }
+
+    if (remainingTypes.isNotEmpty()) {
+      remainingTypes.forEach {
+        realMessager
           .printMessage(
             Diagnostic.Kind.ERROR,
-            "Cannot convert nested classes to Kotlin safely. Please move this to top-level first.",
+            "Cannot convert non-autovalue nested classes to Kotlin safely. Please move this to top-level first.",
             it
           )
       }
       return null
     }
 
-    val classDoc = avClass.parseDocs()
+    for (enumType in enums) {
+      val (cn, spec) = EnumConversion.convert(
+        elements,
+        realMessager,
+        enumType
+      ) ?: continue
+      collectedEnums[cn] = spec
+    }
+
+    val classDoc = avClass.parseDocs(elements)
 
     var redactedClassName: ClassName? = null
 
@@ -189,7 +205,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
           isOverride = isAnOverride,
           isRedacted = isRedacted,
           visibility = if (Modifier.PUBLIC in method.modifiers) KModifier.PUBLIC else KModifier.INTERNAL,
-          doc = method.parseDocs()
+          doc = method.parseDocs(elements)
         )
       }
 
@@ -229,14 +245,13 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       // Note we don't use context.propertyTypes() here because it doesn't contain nullability
       // info, which we did capture
       val propertyTypes = properties.mapValues { it.value.type }
-      avkBuilder = AvkBuilder.from(builder, propertyTypes) { parseDocs() }
+      avkBuilder = AvkBuilder.from(builder, propertyTypes) { parseDocs(elements) }
 
       builderFactories += builder.builderMethods()
       builderFactorySpecs += builder.builderMethods()
         .map {
           FunSpec.copyOf(it)
             .withDocsFrom(it)
-            .addModifiers(avkBuilder.visibility)
             .addStatement("TODO(%S)", "Replace this with the implementation from the source class")
             .build()
         }
@@ -387,7 +402,7 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
               initializer("TODO()")
             }
 
-            field.parseDocs()?.let { addKdoc(it) }
+            field.parseDocs(elements)?.let { addKdoc(it) }
           }
           .build()
       }
@@ -395,14 +410,11 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
     val superclass = avClass.superclass.asSafeTypeName()
       .takeUnless { it == ClassName("java.lang", "Object") }
 
-    val srcDir =
-      context.processingEnvironment().options[OPT_SRC] ?: error("Missing src dir option")
-
-    KotlinClass(
+    val kClass = KotlinClass(
       packageName = context.packageName(),
       doc = classDoc,
       name = avClass.simpleName.toString(),
-      visibility = if (Modifier.PUBLIC in avClass.modifiers) KModifier.PUBLIC else KModifier.INTERNAL,
+      visibility = avClass.visibility,
       isRedacted = isClassRedacted,
       isParcelable = isParcelable,
       superClass = superclass,
@@ -417,8 +429,14 @@ public class AutoValueKotlinExtension : AutoValueExtension() {
       remainingMethods = remainingMethods,
       classAnnotations = avClass.classAnnotations(),
       redactedClassName = redactedClassName,
-      staticConstants = staticConstants
-    ).writeTo(srcDir, context.processingEnvironment().messager)
+      staticConstants = staticConstants,
+      isTopLevel = isTopLevel,
+      children = nestedAvClasses
+        .mapTo(LinkedHashSet()) { it.asClassName() }
+        .plus(collectedEnums.keys)
+    )
+
+    collectedKclassees[context.autoValueClass().asClassName()] = kClass
 
     return null
   }
@@ -464,11 +482,7 @@ private fun AvkBuilder.Companion.from(
   return AvkBuilder(
     name = builderContext.builderType().simpleName.toString(),
     doc = builderContext.builderType().parseDocs(),
-    visibility = if (Modifier.PUBLIC in builderContext.builderType().modifiers) {
-      KModifier.PUBLIC
-    } else {
-      KModifier.INTERNAL
-    },
+    visibility = builderContext.builderType().visibility,
     builderProps = props,
     buildFun = builderContext.buildMethod()
       .map {

@@ -15,8 +15,6 @@
  */
 package com.slack.auto.value.kotlin
 
-import com.gabrielittner.auto.value.with.AutoValueWithExtension
-import com.google.auto.value.processor.AutoValueProcessor
 import com.google.common.truth.Truth.assertAbout
 import com.google.common.truth.Truth.assertThat
 import com.google.testing.compile.CompilationSubject
@@ -24,9 +22,6 @@ import com.google.testing.compile.CompilationSubject.compilations
 import com.google.testing.compile.Compiler
 import com.google.testing.compile.Compiler.javac
 import com.google.testing.compile.JavaFileObjects.forSourceString
-import com.ryanharter.auto.value.moshi.AutoValueMoshiExtension
-import com.ryanharter.auto.value.parcel.AutoValueParcelExtension
-import com.squareup.auto.value.redacted.AutoValueRedactedExtension
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -102,6 +97,12 @@ class AutoValueKotlinExtensionTest {
 
             static Builder builder() {
               return null;
+            }
+
+            enum ExampleEnum {
+              ENUM_VALUE,
+              @Redacted
+              ANNOTATED_ENUM_VALUE
             }
 
             @AutoValue.Builder
@@ -393,6 +394,12 @@ class AutoValueKotlinExtensionTest {
             internal fun builder(): Builder {
               TODO("Replace this with the implementation from the source class")
             }
+          }
+
+          internal enum class ExampleEnum {
+            ENUM_VALUE,
+            @Redacted
+            ANNOTATED_ENUM_VALUE,
           }
         }
 
@@ -979,10 +986,99 @@ class AutoValueKotlinExtensionTest {
   }
 
   @Test
-  fun nestedError() {
+  fun nestedClasses() {
     val result = compile(
       forSourceString(
-        "test.Example",
+        "test.Outer",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+
+          @AutoValue
+          abstract class Outer {
+
+            abstract String outerValue();
+
+            @AutoValue
+            abstract static class Inner {
+
+              abstract String value();
+
+              abstract String withValue();
+            }
+          }
+        """.trimIndent()
+      )
+    )
+
+    result.succeeded()
+    val generated = File(srcDir, "test/Outer.kt")
+    assertThat(generated.exists()).isTrue()
+    assertThat(generated.readText())
+      .isEqualTo(
+        """
+          package test
+
+          import kotlin.jvm.JvmName
+          import kotlin.jvm.JvmSynthetic
+
+          data class Outer(
+            @get:JvmName("outerValue")
+            val outerValue: String
+          ) {
+            @JvmSynthetic
+            @JvmName("-outerValue")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("outerValue")
+            )
+            fun outerValue(): String {
+              outerValue()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            data class Inner(
+              @get:JvmName("value")
+              val `value`: String,
+              @get:JvmName("withValue")
+              val withValue: String
+            ) {
+              @JvmSynthetic
+              @JvmName("-value")
+              @Deprecated(
+                message = "Use the property",
+                replaceWith = ReplaceWith("value")
+              )
+              fun `value`(): String {
+                `value`()
+                TODO("Remove this function. Use the above line to auto-migrate.")
+              }
+
+              @JvmSynthetic
+              @JvmName("-withValue")
+              @Deprecated(
+                message = "Use the property",
+                replaceWith = ReplaceWith("withValue")
+              )
+              fun withValue(): String {
+                withValue()
+                TODO("Remove this function. Use the above line to auto-migrate.")
+              }
+
+              fun withValue(`value`: String): Inner = copy(`value` = `value`)
+            }
+          }
+
+        """.trimIndent()
+      )
+  }
+
+  @Test
+  fun nestedError_outerNonAuto() {
+    val result = compile(
+      forSourceString(
+        "test.Outer",
         """
           package test;
 
@@ -1007,10 +1103,39 @@ class AutoValueKotlinExtensionTest {
   }
 
   @Test
+  fun nestedError_innerNonAuto() {
+    val result = compile(
+      forSourceString(
+        "test.Outer",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+
+          @AutoValue
+          abstract class Outer {
+
+            abstract String value();
+
+            abstract String withValue();
+
+            static class Inner {
+
+            }
+          }
+        """.trimIndent()
+      )
+    )
+
+    result.failed()
+    result.hadErrorContaining("Cannot convert non-autovalue nested classes to Kotlin safely. Please move this to top-level first.")
+  }
+
+  @Test
   fun nestedWarning() {
     val result = compile(
       forSourceString(
-        "test.Example",
+        "test.Outer",
         """
           package test;
 
@@ -1169,17 +1294,7 @@ class AutoValueKotlinExtensionTest {
   private fun compile(vararg sourceFiles: JavaFileObject, compilerBody: Compiler.() -> Compiler = { this }): CompilationSubject {
     val compilation = javac()
       .withOptions(compilerSrcOption())
-      .withProcessors(
-        AutoValueProcessor(
-          listOf(
-            AutoValueKotlinExtension(),
-            AutoValueMoshiExtension(),
-            AutoValueWithExtension(),
-            AutoValueRedactedExtension(),
-            AutoValueParcelExtension()
-          )
-        )
-      )
+      .withProcessors(AutoValueKotlinProcessor())
       .let(compilerBody)
       .compile(*sourceFiles)
     return assertAbout(compilations())

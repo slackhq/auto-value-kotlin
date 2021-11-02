@@ -17,6 +17,11 @@
 @file:OptIn(DelicateKotlinPoetApi::class)
 package com.slack.auto.value.kotlin
 
+import com.google.auto.common.Visibility
+import com.google.auto.common.Visibility.DEFAULT
+import com.google.auto.common.Visibility.PRIVATE
+import com.google.auto.common.Visibility.PROTECTED
+import com.google.auto.common.Visibility.PUBLIC
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.BYTE
@@ -26,6 +31,7 @@ import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.DOUBLE
 import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.FLOAT
+import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.KModifier
@@ -37,12 +43,18 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.SHORT
 import com.squareup.kotlinpoet.STRING
 import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.UNIT
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.asTypeVariableName
 import com.squareup.moshi.Json
+import java.io.File
+import java.io.OutputStreamWriter
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
@@ -51,7 +63,11 @@ import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.type.TypeVariable
+import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
 internal val NONNULL_ANNOTATIONS = setOf(
   "NonNull",
@@ -171,6 +187,7 @@ public fun FunSpec.Companion.copyOf(method: ExecutableElement): FunSpec.Builder 
 
   val methodName = method.simpleName.toString()
   val funBuilder = builder(methodName)
+    .addModifiers(method.visibility)
 
   modifiers = modifiers.toMutableSet()
   modifiers.remove(Modifier.ABSTRACT)
@@ -214,7 +231,6 @@ public fun ParameterSpec.Companion.getWithNullability(element: VariableElement):
     element.annotationMirrors.any { (it.annotationType.asElement() as TypeElement).simpleName.toString() == "Nullable" }
   val type = element.asType().asSafeTypeName().copy(nullable = isNullable)
   return builder(name, type)
-    .jvmModifiers(element.modifiers)
     .build()
 }
 
@@ -281,3 +297,88 @@ public fun ProcessingEnvironment.isParcelable(element: TypeElement): Boolean {
 
 private fun TypeMirror.isClassOfType(types: Types, other: TypeMirror?) =
   types.isAssignable(this, other)
+
+@ExperimentalAvkApi
+public val Element.visibility: KModifier
+  get() = when (Visibility.effectiveVisibilityOfElement(this)!!) {
+    PRIVATE -> KModifier.PRIVATE
+    DEFAULT -> KModifier.INTERNAL
+    PROTECTED -> KModifier.PROTECTED
+    PUBLIC -> KModifier.PUBLIC
+  }
+
+@ExperimentalAvkApi
+@OptIn(ExperimentalPathApi::class)
+public fun TypeSpec.writeCleanlyTo(packageName: String, dir: String) {
+  val file = File(dir).toPath()
+  val outputPath = FileSpec.get(packageName, this)
+    .writeToLocal(file)
+  val text = outputPath.readText()
+  // Post-process to remove any kotlin intrinsic types
+  // Is this wildly inefficient? yes. Does it really matter in our cases? nah
+  var prevWasBlank = false
+  outputPath.writeText(
+    text
+      .lineSequence()
+      .filterNot { it in INTRINSIC_IMPORTS }
+      .mapNotNull {
+        if (it.trimStart().startsWith("public ")) {
+          prevWasBlank = false
+          val indent = it.substringBefore("public ")
+          it.removePrefix(indent).removePrefix("public ").prependIndent(indent)
+        } else if (it.isKotlinPackageImport) {
+          // Ignore kotlin implicit imports
+          null
+        } else if (it.isBlank()) {
+          if (prevWasBlank) {
+            null
+          } else {
+            prevWasBlank = true
+            it
+          }
+        } else {
+          prevWasBlank = false
+          it
+        }
+      }
+      .joinToString("\n")
+  )
+}
+
+/** Best-effort checks if the string is an import from `kotlin.*` */
+@Suppress("MagicNumber")
+private val String.isKotlinPackageImport: Boolean get() = startsWith("import kotlin.") &&
+  // Looks like a class
+  // 14 is the length of `import kotlin.`
+  get(14).isUpperCase() &&
+  // Exclude if it's importing a nested element
+  '.' !in removePrefix("import kotlin.")
+
+private fun FileSpec.writeToLocal(directory: Path): Path {
+  require(Files.notExists(directory) || Files.isDirectory(directory)) {
+    "path $directory exists but is not a directory."
+  }
+  var srcDirectory = directory
+  if (packageName.isNotEmpty()) {
+    for (packageComponent in packageName.split('.').dropLastWhile { it.isEmpty() }) {
+      srcDirectory = srcDirectory.resolve(packageComponent)
+    }
+  }
+
+  Files.createDirectories(srcDirectory)
+
+  val outputPath = srcDirectory.resolve("$name.kt")
+  OutputStreamWriter(
+    Files.newOutputStream(outputPath),
+    StandardCharsets.UTF_8
+  ).use { writer -> writeTo(writer) }
+  return outputPath
+}
+
+@ExperimentalAvkApi
+@Suppress("ReturnCount")
+public fun Element.parseDocs(elements: Elements): String? {
+  val doc = elements.getDocComment(this)?.trim() ?: return null
+  if (doc.isBlank()) return null
+  return cleanUpDoc(doc)
+}
