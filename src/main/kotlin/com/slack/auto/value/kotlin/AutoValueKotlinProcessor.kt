@@ -37,6 +37,7 @@ import javax.annotation.processing.Messager
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
+import javax.annotation.processing.SupportedOptions
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
@@ -53,6 +54,7 @@ import javax.tools.JavaFileObject
 import javax.tools.JavaFileObject.Kind.CLASS
 import javax.tools.JavaFileObject.Kind.OTHER
 
+@SupportedOptions(Options.OPT_SRC, Options.OPT_IGNORE_NESTED, Options.OPT_TARGETS)
 @AutoService(Processor::class)
 public class AutoValueKotlinProcessor : AbstractProcessor() {
 
