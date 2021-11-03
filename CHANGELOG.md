@@ -1,6 +1,13 @@
 Changelog
 =========
 
+1.1.1
+-----
+
+_2021-11-03_
+
+* **Fix:** `AutoValueKotlinProcessor` now properly declares its supported options.
+
 1.1.0
 -----
 
