@@ -48,6 +48,7 @@ import javax.lang.model.element.NestingKind
 import javax.lang.model.element.NestingKind.TOP_LEVEL
 import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic.Kind
+import javax.tools.Diagnostic.Kind.ERROR
 import javax.tools.FileObject
 import javax.tools.JavaFileManager.Location
 import javax.tools.JavaFileObject
@@ -73,6 +74,11 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
     annotations: Set<TypeElement>,
     roundEnv: RoundEnvironment
   ): Boolean {
+    if (roundEnv.getElementsAnnotatedWith(AutoValue::class.java).isEmpty()) {
+      // Nothing to do this round
+      return false
+    }
+
     // Load extensions ourselves
     @Suppress("TooGenericExceptionCaught", "SwallowedException")
     val extensions = try {
@@ -99,6 +105,10 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
 
     // We're done processing, write all our collected classes down
     if (roundEnv.processingOver()) {
+      if (collectedClasses.isEmpty()) {
+        processingEnv.messager.printMessage(ERROR, "No AutoValue classes found")
+        return false
+      }
       val srcDir =
         processingEnv.options[AutoValueKotlinExtension.OPT_SRC] ?: error("Missing src dir option")
       val roots = collectedClasses.filterValues { it.isTopLevel }
