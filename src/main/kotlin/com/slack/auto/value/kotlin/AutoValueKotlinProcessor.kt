@@ -61,6 +61,12 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
 
   private val collectedClasses: MutableMap<ClassName, KotlinClass> = ConcurrentHashMap<ClassName, KotlinClass>()
   private val collectedEnums: MutableMap<ClassName, TypeSpec> = ConcurrentHashMap<ClassName, TypeSpec>()
+  private lateinit var options: Options
+
+  override fun init(processingEnv: ProcessingEnvironment) {
+    super.init(processingEnv)
+    options = Options(processingEnv.options)
+  }
 
   override fun getSupportedAnnotationTypes(): Set<String> {
     return setOf(AutoValue::class.java.canonicalName)
@@ -74,7 +80,13 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
     annotations: Set<TypeElement>,
     roundEnv: RoundEnvironment
   ): Boolean {
-    if (roundEnv.getElementsAnnotatedWith(AutoValue::class.java).isEmpty()) {
+    val avClasses = roundEnv.getElementsAnnotatedWith(AutoValue::class.java)
+    if (avClasses.isEmpty()) {
+      // Nothing to do this round
+      return false
+    }
+
+    if (options.targets.isNotEmpty() && avClasses.none { it.simpleName.toString() in options.targets }) {
       // Nothing to do this round
       return false
     }
@@ -88,7 +100,7 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
     }
 
     // Make our extension
-    val avkExtension = AutoValueKotlinExtension(processingEnv.messager)
+    val avkExtension = AutoValueKotlinExtension(processingEnv.messager, options)
 
     // Create an in-memory av processor and run it
     val avProcessor = AutoValueProcessor(extensions + avkExtension)
@@ -110,7 +122,7 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
         return false
       }
       val srcDir =
-        processingEnv.options[AutoValueKotlinExtension.OPT_SRC] ?: error("Missing src dir option")
+        processingEnv.options[Options.OPT_SRC] ?: error("Missing src dir option")
       val roots = collectedClasses.filterValues { it.isTopLevel }
         .toMutableMap()
       for ((_, root) in roots) {

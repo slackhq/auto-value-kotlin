@@ -50,23 +50,17 @@ import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 import javax.tools.Diagnostic
 
-public class AutoValueKotlinExtension(private val realMessager: Messager) : AutoValueExtension() {
-
-  public companion object {
-    // Options
-    public const val OPT_SRC: String = "avkSrc"
-    public const val OPT_TARGETS: String = "avkTargets"
-    public const val OPT_IGNORE_NESTED: String = "avkIgnoreNested"
-  }
+public class AutoValueKotlinExtension(
+  private val realMessager: Messager,
+  private val options: Options
+) : AutoValueExtension() {
 
   internal val collectedKclassees = ConcurrentHashMap<ClassName, KotlinClass>()
   internal val collectedEnums = ConcurrentHashMap<ClassName, TypeSpec>()
   private lateinit var elements: Elements
   private lateinit var types: Types
 
-  override fun getSupportedOptions(): Set<String> {
-    return setOf(OPT_SRC, OPT_TARGETS, OPT_IGNORE_NESTED)
-  }
+  override fun getSupportedOptions(): Set<String> = Options.ALL
 
   override fun incrementalType(processingEnvironment: ProcessingEnvironment): IncrementalExtensionType {
     // This is intentionally not incremental, we are generating into source sets directly
@@ -91,11 +85,6 @@ public class AutoValueKotlinExtension(private val realMessager: Messager) : Auto
     classToExtend: String,
     isFinal: Boolean
   ): String? {
-    val options = Options(context.processingEnvironment().options)
-
-    val ignoreNested =
-      context.processingEnvironment().options[OPT_IGNORE_NESTED]?.toBoolean() ?: false
-
     if (options.targets.isNotEmpty() && context.autoValueClass().simpleName.toString() !in options.targets) {
       return null
     }
@@ -109,7 +98,7 @@ public class AutoValueKotlinExtension(private val realMessager: Messager) : Auto
         AutoValue::class.java
       )
       if (!isParentAv) {
-        val diagnosticKind = if (ignoreNested) {
+        val diagnosticKind = if (options.ignoreNested) {
           Diagnostic.Kind.WARNING
         } else {
           Diagnostic.Kind.ERROR
