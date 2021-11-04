@@ -82,39 +82,9 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
     roundEnv: RoundEnvironment
   ): Boolean {
     val avClasses = roundEnv.getElementsAnnotatedWith(AutoValue::class.java)
-    if (avClasses.isEmpty()) {
-      // Nothing to do this round
-      return false
+    if (avClasses.isNotEmpty()) {
+      processAvElements(annotations, roundEnv, avClasses)
     }
-
-    if (options.targets.isNotEmpty() && avClasses.none { it.simpleName.toString() in options.targets }) {
-      // Nothing to do this round
-      return false
-    }
-
-    // Load extensions ourselves
-    @Suppress("TooGenericExceptionCaught", "SwallowedException")
-    val extensions = try {
-      ServiceLoader.load(AutoValueExtension::class.java, AutoValueExtension::class.java.classLoader).toList()
-    } catch (e: Exception) {
-      emptyList()
-    }
-
-    // Make our extension
-    val avkExtension = AutoValueKotlinExtension(processingEnv.messager, options)
-
-    // Create an in-memory av processor and run it
-    val avProcessor = AutoValueProcessor(extensions + avkExtension)
-    avProcessor.init(object : ProcessingEnvironment by processingEnv {
-      override fun getMessager(): Messager = NoOpMessager
-
-      override fun getFiler(): Filer = NoOpFiler
-    })
-    avProcessor.process(annotations, roundEnv)
-
-    // Save off our extracted classes
-    collectedClasses += avkExtension.collectedKclassees
-    collectedEnums += avkExtension.collectedEnums
 
     // We're done processing, write all our collected classes down
     if (roundEnv.processingOver()) {
@@ -150,6 +120,41 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
         }
       }
       .build()
+  }
+
+  private fun processAvElements(
+    annotations: Set<TypeElement>,
+    roundEnv: RoundEnvironment,
+    avClasses: Set<Element>
+  ) {
+    if (options.targets.isNotEmpty() && avClasses.none { it.simpleName.toString() in options.targets }) {
+      // Nothing to do this round
+      return
+    }
+
+    // Load extensions ourselves
+    @Suppress("TooGenericExceptionCaught", "SwallowedException")
+    val extensions = try {
+      ServiceLoader.load(AutoValueExtension::class.java, AutoValueExtension::class.java.classLoader).toList()
+    } catch (e: Exception) {
+      emptyList()
+    }
+
+    // Make our extension
+    val avkExtension = AutoValueKotlinExtension(processingEnv.messager, options)
+
+    // Create an in-memory av processor and run it
+    val avProcessor = AutoValueProcessor(extensions + avkExtension)
+    avProcessor.init(object : ProcessingEnvironment by processingEnv {
+      override fun getMessager(): Messager = NoOpMessager
+
+      override fun getFiler(): Filer = NoOpFiler
+    })
+    avProcessor.process(annotations, roundEnv)
+
+    // Save off our extracted classes
+    collectedClasses += avkExtension.collectedKclassees
+    collectedEnums += avkExtension.collectedEnums
   }
 }
 
