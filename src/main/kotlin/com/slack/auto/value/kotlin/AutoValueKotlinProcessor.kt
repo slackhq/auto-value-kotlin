@@ -94,7 +94,7 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
     // Load extensions ourselves
     @Suppress("TooGenericExceptionCaught", "SwallowedException")
     val extensions = try {
-      ServiceLoader.load(AutoValueExtension::class.java).toList()
+      ServiceLoader.load(AutoValueExtension::class.java, AutoValueExtension::class.java.classLoader).toList()
     } catch (e: Exception) {
       emptyList()
     }
