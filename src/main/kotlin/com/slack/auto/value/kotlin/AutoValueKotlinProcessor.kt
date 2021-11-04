@@ -76,6 +76,7 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
     return SourceVersion.latest()
   }
 
+  @Suppress("ReturnCount")
   override fun process(
     annotations: Set<TypeElement>,
     roundEnv: RoundEnvironment
