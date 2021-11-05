@@ -1154,7 +1154,7 @@ class AutoValueKotlinExtensionTest {
         """.trimIndent()
       )
     ) {
-      withOptions(listOf(compilerSrcOption(), "-A${AutoValueKotlinExtension.OPT_IGNORE_NESTED}=true"))
+      withOptions(listOf(compilerSrcOption(), "-A${Options.OPT_IGNORE_NESTED}=true"))
     }
 
     result.succeeded()
@@ -1191,7 +1191,7 @@ class AutoValueKotlinExtensionTest {
         """.trimIndent()
       )
     ) {
-      withOptions(listOf(compilerSrcOption(), "-A${AutoValueKotlinExtension.OPT_TARGETS}=Example"))
+      withOptions(listOf(compilerSrcOption(), "-A${Options.OPT_TARGETS}=Example"))
     }
 
     result.succeeded()
@@ -1288,7 +1288,7 @@ class AutoValueKotlinExtensionTest {
   }
 
   private fun compilerSrcOption(): String {
-    return "-A${AutoValueKotlinExtension.OPT_SRC}=${srcDir.absolutePath}"
+    return "-A${Options.OPT_SRC}=${srcDir.absolutePath}"
   }
 
   private fun compile(vararg sourceFiles: JavaFileObject, compilerBody: Compiler.() -> Compiler = { this }): CompilationSubject {
