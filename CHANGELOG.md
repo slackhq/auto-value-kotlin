@@ -1,6 +1,15 @@
 Changelog
 =========
 
+1.1.2
+-----
+
+_2021-11-05_
+
+* **Enhancement:** Skip processing if there are no `@AutoValue`-annotated classes in the current round.
+* **Enhancement:** Report an error if there are no `@AutoValue`-annotated classes across all rounds.
+* **Fix:** Use correct classloader when loading `AutoValueExtension` services
+
 1.1.1
 -----
 
