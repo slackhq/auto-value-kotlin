@@ -46,6 +46,7 @@ public object EnumConversion {
     val className = element.asClassName()
     val docs = element.parseDocs(elements)
     return className to TypeSpec.enumBuilder(className.simpleName)
+      .addAnnotations(element.classAnnotations())
       .addModifiers(element.visibility)
       .apply {
         docs?.let {
@@ -57,7 +58,7 @@ public object EnumConversion {
             val annotations = field.annotationMirrors
               .map {
                 if (it.annotationType.asTypeName() == JSON_CN) {
-                  isMoshiSerialized == true
+                  isMoshiSerialized = true
                 }
                 AnnotationSpec.get(it)
               }
@@ -75,7 +76,7 @@ public object EnumConversion {
           }
         }
 
-        if (isMoshiSerialized) {
+        if (isMoshiSerialized && annotationSpecs.none { it.typeName == JSON_CLASS_CN }) {
           addAnnotation(
             AnnotationSpec.builder(JSON_CLASS_CN)
               .addMember("generateAdapter = false")
