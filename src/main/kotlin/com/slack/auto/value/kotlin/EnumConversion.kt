@@ -36,7 +36,7 @@ import javax.tools.Diagnostic.Kind.ERROR
  */
 @ExperimentalAvkApi
 public object EnumConversion {
-  @Suppress("ReturnCount")
+  @Suppress("ReturnCount", "ComplexMethod")
   @OptIn(DelicateKotlinPoetApi::class)
   public fun convert(
     elements: Elements,
