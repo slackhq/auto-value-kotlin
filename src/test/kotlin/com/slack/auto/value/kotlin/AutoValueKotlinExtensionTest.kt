@@ -396,7 +396,7 @@ class AutoValueKotlinExtensionTest {
             }
           }
 
-          @JsonClass(generateAdapter = true)
+          @JsonClass(generateAdapter = false)
           internal enum class ExampleEnum {
             ENUM_VALUE,
             @Redacted
