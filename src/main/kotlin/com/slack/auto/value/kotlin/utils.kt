@@ -50,6 +50,7 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.asTypeVariableName
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 import java.io.File
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
@@ -100,6 +101,7 @@ internal const val DOC_LINK_REGEX = "[0-9A-Za-z._]*"
 internal const val MAX_PARAMS = 7
 
 internal val JSON_CN = Json::class.asClassName()
+internal val JSON_CLASS_CN = JsonClass::class.asClassName()
 
 @ExperimentalAvkApi
 public fun TypeMirror.asSafeTypeName(): TypeName {
