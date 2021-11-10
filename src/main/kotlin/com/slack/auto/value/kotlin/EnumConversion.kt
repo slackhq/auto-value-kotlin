@@ -20,6 +20,7 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
+import com.squareup.kotlinpoet.asTypeName
 import javax.annotation.processing.Messager
 import javax.lang.model.element.ElementKind.ENUM
 import javax.lang.model.element.ElementKind.ENUM_CONSTANT
@@ -35,7 +36,7 @@ import javax.tools.Diagnostic.Kind.ERROR
  */
 @ExperimentalAvkApi
 public object EnumConversion {
-  @Suppress("ReturnCount")
+  @Suppress("ReturnCount", "ComplexMethod")
   @OptIn(DelicateKotlinPoetApi::class)
   public fun convert(
     elements: Elements,
@@ -45,15 +46,22 @@ public object EnumConversion {
     val className = element.asClassName()
     val docs = element.parseDocs(elements)
     return className to TypeSpec.enumBuilder(className.simpleName)
+      .addAnnotations(element.classAnnotations())
       .addModifiers(element.visibility)
       .apply {
         docs?.let {
           addKdoc(it)
         }
+        var isMoshiSerialized = false
         for (field in ElementFilter.fieldsIn(element.enclosedElements)) {
           if (field.kind == ENUM_CONSTANT) {
             val annotations = field.annotationMirrors
-              .map { AnnotationSpec.get(it) }
+              .map {
+                if (it.annotationType.asTypeName() == JSON_CN) {
+                  isMoshiSerialized = true
+                }
+                AnnotationSpec.get(it)
+              }
             addEnumConstant(
               field.simpleName.toString(),
               TypeSpec.anonymousClassBuilder()
@@ -66,6 +74,14 @@ public object EnumConversion {
                 .build()
             )
           }
+        }
+
+        if (isMoshiSerialized && annotationSpecs.none { it.typeName == JSON_CLASS_CN }) {
+          addAnnotation(
+            AnnotationSpec.builder(JSON_CLASS_CN)
+              .addMember("generateAdapter = false")
+              .build()
+          )
         }
 
         for (nestedType in ElementFilter.typesIn(element.enclosedElements)) {

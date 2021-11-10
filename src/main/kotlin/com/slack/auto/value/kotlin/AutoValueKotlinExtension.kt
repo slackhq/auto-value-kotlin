@@ -36,6 +36,7 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeVariableName
 import com.squareup.kotlinpoet.joinToCode
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.processing.Messager
@@ -142,7 +143,20 @@ public class AutoValueKotlinExtension(
         realMessager,
         enumType
       ) ?: continue
-      collectedEnums[cn] = spec
+      // If the AV class is Moshi-serializable, treat the enum as such too
+      val addJsonClass = isAnnotationPresent(avClass, JsonClass::class.java) &&
+        spec.annotationSpecs.none { it.typeName == JSON_CLASS_CN }
+      collectedEnums[cn] = if (addJsonClass) {
+        spec.toBuilder()
+          .addAnnotation(
+            AnnotationSpec.builder(JSON_CLASS_CN)
+              .addMember("generateAdapter = false")
+              .build()
+          )
+          .build()
+      } else {
+        spec
+      }
     }
 
     val classDoc = avClass.parseDocs(elements)
