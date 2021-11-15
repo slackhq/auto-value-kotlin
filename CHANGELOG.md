@@ -1,6 +1,15 @@
 Changelog
 =========
 
+1.1.3
+-----
+
+_2021-11-15_
+
+* **Fix:** Don't leak nested enums across multiple AVK extension passes.
+* **Fix:** Add missing `@JsonClass` annotation to nested enums.
+* **Fix:** Generate constructor parameter defaults for `@JsonClass`-annotated classes.
+
 1.1.2
 -----
 
