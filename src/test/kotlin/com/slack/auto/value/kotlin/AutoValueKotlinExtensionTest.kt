@@ -155,27 +155,27 @@ class AutoValueKotlinExtensionTest {
           @get:JvmName("value")
           val `value`: String,
           @get:JvmName("nullableValue")
-          val nullableValue: String?,
+          val nullableValue: String? = null,
           @get:JvmName("collection")
           val collection: List<String>,
           @get:JvmName("nullableCollection")
-          val nullableCollection: List<String>?,
+          val nullableCollection: List<String>? = null,
           @get:JvmName("aBoolean")
-          val aBoolean: Boolean,
+          val aBoolean: Boolean = false,
           @get:JvmName("aChar")
-          val aChar: Char,
+          val aChar: Char = 0.toChar(),
           @get:JvmName("aByte")
-          val aByte: Byte,
+          val aByte: Byte = 0.toByte(),
           @get:JvmName("aShort")
-          val aShort: Short,
+          val aShort: Short = 0.toShort(),
           @get:JvmName("aInt")
-          val aInt: Int,
+          val aInt: Int = 0,
           @get:JvmName("aFloat")
-          val aFloat: Float,
+          val aFloat: Float = 0f,
           @get:JvmName("aLong")
-          val aLong: Long,
+          val aLong: Long = 0L,
           @get:JvmName("aDouble")
-          val aDouble: Double,
+          val aDouble: Double = 0.0,
           @get:JvmName("redactedString")
           @Redacted
           val redactedString: String
@@ -1229,6 +1229,142 @@ class AutoValueKotlinExtensionTest {
           data class Example(
             val `value`: String
           )
+
+        """.trimIndent()
+      )
+  }
+
+  // Regression test for https://github.com/slackhq/auto-value-kotlin/issues/16
+  @Test
+  fun nonJsonClassesDoNotGetDefaults() {
+    val result = compile(
+      forSourceString(
+        "test.Example",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+          import org.jetbrains.annotations.Nullable;
+
+          @AutoValue
+          abstract class Example {
+            @Nullable
+            abstract String name();
+
+            @AutoValue.Builder
+            interface Builder {
+              Builder name(@Nullable String name);
+              Example build();
+            }
+          }
+        """.trimIndent()
+      )
+    )
+
+    result.succeeded()
+    val generated = File(srcDir, "test/Example.kt")
+    assertThat(generated.exists()).isTrue()
+    assertThat(generated.readText())
+      .isEqualTo(
+        """
+          package test
+
+          import kotlin.jvm.JvmName
+          import kotlin.jvm.JvmSynthetic
+
+          data class Example internal constructor(
+            @get:JvmName("name")
+            val name: String?
+          ) {
+            @JvmSynthetic
+            @JvmName("-name")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("name")
+            )
+            fun name(): String? {
+              name()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            internal class Builder internal constructor(
+              private var name: String? = null
+            ) {
+              internal fun name(name: String?): Builder = apply { this.name = name }
+
+              internal fun build(): Example = Example(name = name)
+            }
+          }
+
+        """.trimIndent()
+      )
+  }
+
+  // Regression test for https://github.com/slackhq/auto-value-kotlin/issues/16
+  @Test
+  fun jsonClassesWithBuildersGetDefaults() {
+    val result = compile(
+      forSourceString(
+        "test.Example",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+          import com.squareup.moshi.JsonClass;
+          import org.jetbrains.annotations.Nullable;
+
+          @JsonClass(generateAdapter = true, generator = "avm")
+          @AutoValue
+          abstract class Example {
+            @Nullable
+            abstract String name();
+
+            @AutoValue.Builder
+            interface Builder {
+              Builder name(@Nullable String name);
+              Example build();
+            }
+          }
+        """.trimIndent()
+      )
+    )
+
+    result.succeeded()
+    val generated = File(srcDir, "test/Example.kt")
+    assertThat(generated.exists()).isTrue()
+    assertThat(generated.readText())
+      .isEqualTo(
+        """
+          package test
+
+          import com.squareup.moshi.JsonClass
+          import kotlin.jvm.JvmName
+          import kotlin.jvm.JvmSynthetic
+
+          @JsonClass(generateAdapter = true)
+          data class Example internal constructor(
+            @get:JvmName("name")
+            val name: String? = null
+          ) {
+            @JvmSynthetic
+            @JvmName("-name")
+            @Deprecated(
+              message = "Use the property",
+              replaceWith = ReplaceWith("name")
+            )
+            fun name(): String? {
+              name()
+              TODO("Remove this function. Use the above line to auto-migrate.")
+            }
+
+            internal class Builder internal constructor(
+              private var name: String? = null
+            ) {
+              internal fun name(name: String?): Builder = apply { this.name = name }
+
+              internal fun build(): Example = Example(name = name)
+            }
+          }
 
         """.trimIndent()
       )

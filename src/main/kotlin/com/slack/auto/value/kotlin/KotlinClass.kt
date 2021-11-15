@@ -81,6 +81,8 @@ public data class KotlinClass(
       constructorBuilder.addModifiers(INTERNAL)
     }
 
+    // TODO does parcelize care about these?
+    val needsConstructorDefaultValues = classAnnotations.any { it.typeName == JSON_CLASS_CN }
     for ((_, prop) in properties) {
       typeBuilder.addProperty(
         PropertySpec.builder(prop.name, prop.type)
@@ -108,7 +110,8 @@ public data class KotlinClass(
       )
 
       val defaultCodeBlock = when {
-        avkBuilder != null -> null // Builders handle the defaults
+        // Builders handle the defaults unless it's a Json class, in which case we need both!
+        avkBuilder != null && !needsConstructorDefaultValues -> null
         else -> prop.defaultValue
       }
       constructorBuilder.addParameter(
