@@ -1424,11 +1424,59 @@ class AutoValueKotlinExtensionTest {
       )
   }
 
+  // Regression test for https://github.com/slackhq/auto-value-kotlin/issues/15
+  @Test
+  fun enumsAreNotShared() {
+    val result = compile(
+      forSourceString(
+        "test.Example",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+
+          @AutoValue
+          abstract class Example {
+            abstract String getValue();
+            abstract String nonGetValue();
+
+            enum ExampleEnum {
+              INSTANCE
+            }
+          }
+        """.trimIndent()
+      ),
+      forSourceString(
+        "test.Example2",
+        """
+          package test;
+
+          import com.google.auto.value.AutoValue;
+
+          @AutoValue
+          abstract class Example2 {
+            abstract String getValue();
+            abstract String nonGetValue();
+
+            enum Example2Enum {
+              INSTANCE
+            }
+          }
+        """.trimIndent()
+      ),
+    )
+
+    result.succeeded()
+  }
+
   private fun compilerSrcOption(): String {
     return "-A${Options.OPT_SRC}=${srcDir.absolutePath}"
   }
 
-  private fun compile(vararg sourceFiles: JavaFileObject, compilerBody: Compiler.() -> Compiler = { this }): CompilationSubject {
+  private fun compile(
+    vararg sourceFiles: JavaFileObject,
+    compilerBody: Compiler.() -> Compiler = { this }
+  ): CompilationSubject {
     val compilation = javac()
       .withOptions(compilerSrcOption())
       .withProcessors(AutoValueKotlinProcessor())

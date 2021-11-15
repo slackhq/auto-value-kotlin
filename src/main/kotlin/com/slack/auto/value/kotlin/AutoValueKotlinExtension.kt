@@ -137,6 +137,7 @@ public class AutoValueKotlinExtension(
       return null
     }
 
+    val collectedEnumsLocal = mutableMapOf<ClassName, TypeSpec>()
     for (enumType in enums) {
       val (cn, spec) = EnumConversion.convert(
         elements,
@@ -146,7 +147,7 @@ public class AutoValueKotlinExtension(
       // If the AV class is Moshi-serializable, treat the enum as such too
       val addJsonClass = isAnnotationPresent(avClass, JsonClass::class.java) &&
         spec.annotationSpecs.none { it.typeName == JSON_CLASS_CN }
-      collectedEnums[cn] = if (addJsonClass) {
+      collectedEnumsLocal[cn] = if (addJsonClass) {
         spec.toBuilder()
           .addAnnotation(
             AnnotationSpec.builder(JSON_CLASS_CN)
@@ -413,6 +414,7 @@ public class AutoValueKotlinExtension(
     val superclass = avClass.superclass.asSafeTypeName()
       .takeUnless { it == ClassName("java.lang", "Object") }
 
+    collectedEnums += collectedEnumsLocal
     val kClass = KotlinClass(
       packageName = context.packageName(),
       doc = classDoc,
@@ -436,7 +438,7 @@ public class AutoValueKotlinExtension(
       isTopLevel = isTopLevel,
       children = nestedAvClasses
         .mapTo(LinkedHashSet()) { it.asClassName() }
-        .plus(collectedEnums.keys)
+        .plus(collectedEnumsLocal.keys)
     )
 
     collectedKclassees[context.autoValueClass().asClassName()] = kClass
