@@ -45,60 +45,57 @@ public object EnumConversion {
   ): Pair<ClassName, TypeSpec>? {
     val className = element.asClassName()
     val docs = element.parseDocs(elements)
-    return className to TypeSpec.enumBuilder(className.simpleName)
-      .addAnnotations(element.classAnnotations())
-      .addModifiers(element.visibility)
-      .apply {
-        docs?.let {
-          addKdoc(it)
-        }
-        var isMoshiSerialized = false
-        for (field in ElementFilter.fieldsIn(element.enclosedElements)) {
-          if (field.kind == ENUM_CONSTANT) {
-            val annotations = field.annotationMirrors
-              .map {
-                if (it.annotationType.asTypeName() == JSON_CN) {
-                  isMoshiSerialized = true
-                }
-                AnnotationSpec.get(it)
-              }
-            addEnumConstant(
-              field.simpleName.toString(),
-              TypeSpec.anonymousClassBuilder()
-                .addAnnotations(annotations)
-                .apply {
-                  field.parseDocs(elements)?.let {
-                    addKdoc(it)
+    return className to
+      TypeSpec.enumBuilder(className.simpleName)
+        .addAnnotations(element.classAnnotations())
+        .addModifiers(element.visibility)
+        .apply {
+          docs?.let { addKdoc(it) }
+          var isMoshiSerialized = false
+          for (field in ElementFilter.fieldsIn(element.enclosedElements)) {
+            if (field.kind == ENUM_CONSTANT) {
+              val annotations =
+                field.annotationMirrors.map {
+                  if (it.annotationType.asTypeName() == JSON_CN) {
+                    isMoshiSerialized = true
                   }
+                  AnnotationSpec.get(it)
                 }
-                .build()
+              addEnumConstant(
+                field.simpleName.toString(),
+                TypeSpec.anonymousClassBuilder()
+                  .addAnnotations(annotations)
+                  .apply { field.parseDocs(elements)?.let { addKdoc(it) } }
+                  .build()
+              )
+            }
+          }
+
+          if (isMoshiSerialized && annotationSpecs.none { it.typeName == JSON_CLASS_CN }) {
+            addAnnotation(
+              AnnotationSpec.builder(JSON_CLASS_CN).addMember("generateAdapter = false").build()
             )
           }
-        }
 
-        if (isMoshiSerialized && annotationSpecs.none { it.typeName == JSON_CLASS_CN }) {
-          addAnnotation(
-            AnnotationSpec.builder(JSON_CLASS_CN)
-              .addMember("generateAdapter = false")
-              .build()
-          )
-        }
+          for (nestedType in ElementFilter.typesIn(element.enclosedElements)) {
+            if (nestedType.kind == ENUM) {
+              convert(elements, messager, nestedType)?.second?.let(::addType)
+            } else {
+              messager.printMessage(
+                ERROR,
+                "Nested types in enums can only be other enums",
+                nestedType
+              )
+              return null
+            }
+          }
 
-        for (nestedType in ElementFilter.typesIn(element.enclosedElements)) {
-          if (nestedType.kind == ENUM) {
-            convert(elements, messager, nestedType)?.second?.let(::addType)
-          } else {
-            messager.printMessage(ERROR, "Nested types in enums can only be other enums", nestedType)
+          for (method in ElementFilter.methodsIn(element.enclosedElements)) {
+            if (method.simpleName.toString() in setOf("values", "valueOf")) continue
+            messager.printMessage(ERROR, "Cannot convert nested enums with methods", method)
             return null
           }
         }
-
-        for (method in ElementFilter.methodsIn(element.enclosedElements)) {
-          if (method.simpleName.toString() in setOf("values", "valueOf")) continue
-          messager.printMessage(ERROR, "Cannot convert nested enums with methods", method)
-          return null
-        }
-      }
-      .build()
+        .build()
   }
 }

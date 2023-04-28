@@ -58,10 +58,11 @@ public data class KotlinClass(
 ) {
   @Suppress("LongMethod", "ComplexMethod")
   public fun toTypeSpec(messager: Messager): TypeSpec {
-    val typeBuilder = TypeSpec.classBuilder(name)
-      .addModifiers(DATA)
-      .addAnnotations(classAnnotations)
-      .addTypeVariables(typeParams)
+    val typeBuilder =
+      TypeSpec.classBuilder(name)
+        .addModifiers(DATA)
+        .addAnnotations(classAnnotations)
+        .addTypeVariables(typeParams)
 
     if (doc != null) {
       typeBuilder.addKdoc(doc)
@@ -109,16 +110,15 @@ public data class KotlinClass(
           .build()
       )
 
-      val defaultCodeBlock = when {
-        // Builders handle the defaults unless it's a Json class, in which case we need both!
-        avkBuilder != null && !needsConstructorDefaultValues -> null
-        else -> prop.defaultValue
-      }
+      val defaultCodeBlock =
+        when {
+          // Builders handle the defaults unless it's a Json class, in which case we need both!
+          avkBuilder != null && !needsConstructorDefaultValues -> null
+          else -> prop.defaultValue
+        }
       constructorBuilder.addParameter(
         ParameterSpec.builder(prop.name, prop.type)
-          .apply {
-            defaultCodeBlock?.let { defaultValue(it) }
-          }
+          .apply { defaultCodeBlock?.let { defaultValue(it) } }
           .build()
       )
 
@@ -131,11 +131,7 @@ public data class KotlinClass(
             .apply {
               // Prop uses getter syntax, kotlin usages are fine
               if (prop.usesGet) {
-                addAnnotation(
-                  AnnotationSpec.builder(JvmName::class)
-                    .addMember("%S", "-")
-                    .build()
-                )
+                addAnnotation(AnnotationSpec.builder(JvmName::class).addMember("%S", "-").build())
               }
               if (prop.isOverride) {
                 // It's from an interface/base class, so leave this as is
@@ -145,13 +141,14 @@ public data class KotlinClass(
                 // Hide from Java, deprecate for Kotlin users
                 addAnnotation(JvmSynthetic::class)
                 addAnnotation(
-                  AnnotationSpec.builder(JvmName::class)
-                    .addMember("%S", "-${prop.name}")
-                    .build()
+                  AnnotationSpec.builder(JvmName::class).addMember("%S", "-${prop.name}").build()
                 )
                 addAnnotation(deprecatedAnnotation("Use the property", prop.name))
                 addStatement("%N()", prop.funName)
-                addStatement("TODO(%S)", "Remove this function. Use the above line to auto-migrate.")
+                addStatement(
+                  "TODO(%S)",
+                  "Remove this function. Use the above line to auto-migrate."
+                )
               }
             }
             .returns(prop.type)
@@ -171,8 +168,7 @@ public data class KotlinClass(
       }
     }
 
-    val companionObjectBuilder = TypeSpec.companionObjectBuilder()
-      .addProperties(staticConstants)
+    val companionObjectBuilder = TypeSpec.companionObjectBuilder().addProperties(staticConstants)
 
     if (staticCreators.isNotEmpty()) {
       companionObjectBuilder.addFunctions(staticCreators)
@@ -187,7 +183,9 @@ public data class KotlinClass(
       typeBuilder.addFunction(
         FunSpec.builder("placeholder")
           .apply {
-            addComment("TODO This is a placeholder to mention the following methods need to be moved manually over:")
+            addComment(
+              "TODO This is a placeholder to mention the following methods need to be moved manually over:"
+            )
             for (remaining in remainingMethods) {
               addComment("  $remaining")
             }
@@ -206,8 +204,9 @@ public data class KotlinClass(
       typeBuilder.addType(avkBuilder.createType(messager))
     }
 
-    val shouldIncludeCompanion = companionObjectBuilder.funSpecs.isNotEmpty() ||
-      companionObjectBuilder.propertySpecs.isNotEmpty()
+    val shouldIncludeCompanion =
+      companionObjectBuilder.funSpecs.isNotEmpty() ||
+        companionObjectBuilder.propertySpecs.isNotEmpty()
     if (shouldIncludeCompanion) {
       typeBuilder.addType(companionObjectBuilder.build())
     }

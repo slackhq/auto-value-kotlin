@@ -22,20 +22,18 @@ import com.google.testing.compile.CompilationSubject.compilations
 import com.google.testing.compile.Compiler
 import com.google.testing.compile.Compiler.javac
 import com.google.testing.compile.JavaFileObjects.forSourceString
+import java.io.File
+import javax.tools.JavaFileObject
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import javax.tools.JavaFileObject
 
 @Suppress("LongMethod", "LargeClass", "MaxLineLength")
 class AutoValueKotlinExtensionTest {
   @JvmField
   @Rule
-  val tmpFolder: TemporaryFolder = TemporaryFolder.builder()
-    .assureDeletion()
-    .build()
+  val tmpFolder: TemporaryFolder = TemporaryFolder.builder().assureDeletion().build()
 
   private lateinit var srcDir: File
 
@@ -46,10 +44,11 @@ class AutoValueKotlinExtensionTest {
 
   @Test
   fun smokeTest() {
-    val result = compile(
-      forSourceString(
-        "test.Example",
-        """
+    val result =
+      compile(
+        forSourceString(
+          "test.Example",
+          """
           package test;
 
           import android.os.Parcelable;
@@ -126,15 +125,16 @@ class AutoValueKotlinExtensionTest {
               abstract Example build();
             }
           }
-        """.trimIndent()
+        """
+            .trimIndent()
+        )
       )
-    )
 
     result.succeeded()
     val generated = File(srcDir, "test/Example.kt")
     assertThat(generated.exists()).isTrue()
     assertThat(generated.readText())
-      //language=Kotlin
+      // language=Kotlin
       .isEqualTo(
         """
         package test
@@ -404,16 +404,18 @@ class AutoValueKotlinExtensionTest {
           }
         }
 
-        """.trimIndent()
+        """
+          .trimIndent()
       )
   }
 
   @Test
   fun creators() {
-    val result = compile(
-      forSourceString(
-        "test.Example",
-        """
+    val result =
+      compile(
+        forSourceString(
+          "test.Example",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -427,9 +429,10 @@ class AutoValueKotlinExtensionTest {
               return null;
             }
           }
-        """.trimIndent()
+        """
+            .trimIndent()
+        )
       )
-    )
 
     result.succeeded()
     val generated = File(srcDir, "test/Example.kt")
@@ -476,16 +479,18 @@ class AutoValueKotlinExtensionTest {
             }
           }
 
-        """.trimIndent()
+        """
+          .trimIndent()
       )
   }
 
   @Test
   fun wither() {
-    val result = compile(
-      forSourceString(
-        "test.Example",
-        """
+    val result =
+      compile(
+        forSourceString(
+          "test.Example",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -497,9 +502,10 @@ class AutoValueKotlinExtensionTest {
 
             abstract String withValue();
           }
-        """.trimIndent()
+        """
+            .trimIndent()
+        )
       )
-    )
 
     result.succeeded()
     val generated = File(srcDir, "test/Example.kt")
@@ -543,16 +549,18 @@ class AutoValueKotlinExtensionTest {
             fun withValue(`value`: String): Example = copy(`value` = `value`)
           }
 
-        """.trimIndent()
+        """
+          .trimIndent()
       )
   }
 
   @Test
   fun defaultsInConstructor() {
-    val result = compile(
-      forSourceString(
-        "test.Example",
-        """
+    val result =
+      compile(
+        forSourceString(
+          "test.Example",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -600,9 +608,10 @@ class AutoValueKotlinExtensionTest {
             abstract Double aNullableDoubleReference();
 
           }
-        """.trimIndent()
+        """
+            .trimIndent()
+        )
       )
-    )
 
     result.succeeded()
     val generated = File(srcDir, "test/Example.kt")
@@ -982,16 +991,18 @@ class AutoValueKotlinExtensionTest {
             }
           }
 
-        """.trimIndent()
+        """
+          .trimIndent()
       )
   }
 
   @Test
   fun nestedClasses() {
-    val result = compile(
-      forSourceString(
-        "test.Outer",
-        """
+    val result =
+      compile(
+        forSourceString(
+          "test.Outer",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -1009,9 +1020,10 @@ class AutoValueKotlinExtensionTest {
               abstract String withValue();
             }
           }
-        """.trimIndent()
+        """
+            .trimIndent()
+        )
       )
-    )
 
     result.succeeded()
     val generated = File(srcDir, "test/Outer.kt")
@@ -1071,16 +1083,18 @@ class AutoValueKotlinExtensionTest {
             }
           }
 
-        """.trimIndent()
+        """
+          .trimIndent()
       )
   }
 
   @Test
   fun nestedError_outerNonAuto() {
-    val result = compile(
-      forSourceString(
-        "test.Outer",
-        """
+    val result =
+      compile(
+        forSourceString(
+          "test.Outer",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -1095,20 +1109,24 @@ class AutoValueKotlinExtensionTest {
               abstract String withValue();
             }
           }
-        """.trimIndent()
+        """
+            .trimIndent()
+        )
       )
-    )
 
     result.failed()
-    result.hadErrorContaining("Cannot convert nested classes to Kotlin safely. Please move this to top-level first.")
+    result.hadErrorContaining(
+      "Cannot convert nested classes to Kotlin safely. Please move this to top-level first."
+    )
   }
 
   @Test
   fun nestedError_innerNonAuto() {
-    val result = compile(
-      forSourceString(
-        "test.Outer",
-        """
+    val result =
+      compile(
+        forSourceString(
+          "test.Outer",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -1124,20 +1142,24 @@ class AutoValueKotlinExtensionTest {
 
             }
           }
-        """.trimIndent()
+        """
+            .trimIndent()
+        )
       )
-    )
 
     result.failed()
-    result.hadErrorContaining("Cannot convert non-autovalue nested classes to Kotlin safely. Please move this to top-level first.")
+    result.hadErrorContaining(
+      "Cannot convert non-autovalue nested classes to Kotlin safely. Please move this to top-level first."
+    )
   }
 
   @Test
   fun nestedWarning() {
-    val result = compile(
-      forSourceString(
-        "test.Outer",
-        """
+    val result =
+      compile(
+        forSourceString(
+          "test.Outer",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -1152,22 +1174,26 @@ class AutoValueKotlinExtensionTest {
               abstract String withValue();
             }
           }
-        """.trimIndent()
-      )
-    ) {
-      withOptions(listOf(compilerSrcOption(), "-A${Options.OPT_IGNORE_NESTED}=true"))
-    }
+        """
+            .trimIndent()
+        )
+      ) {
+        withOptions(listOf(compilerSrcOption(), "-A${Options.OPT_IGNORE_NESTED}=true"))
+      }
 
     result.succeeded()
-    result.hadWarningContaining("Cannot convert nested classes to Kotlin safely. Please move this to top-level first.")
+    result.hadWarningContaining(
+      "Cannot convert nested classes to Kotlin safely. Please move this to top-level first."
+    )
   }
 
   @Test
   fun targets() {
-    val result = compile(
-      forSourceString(
-        "test.Example",
-        """
+    val result =
+      compile(
+        forSourceString(
+          "test.Example",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -1176,11 +1202,12 @@ class AutoValueKotlinExtensionTest {
           abstract class Example {
             abstract String value();
           }
-        """.trimIndent()
-      ),
-      forSourceString(
-        "test.IgnoredExample",
         """
+            .trimIndent()
+        ),
+        forSourceString(
+          "test.IgnoredExample",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -1189,11 +1216,12 @@ class AutoValueKotlinExtensionTest {
           abstract class IgnoredExample {
             abstract String value();
           }
-        """.trimIndent()
-      )
-    ) {
-      withOptions(listOf(compilerSrcOption(), "-A${Options.OPT_TARGETS}=Example"))
-    }
+        """
+            .trimIndent()
+        )
+      ) {
+        withOptions(listOf(compilerSrcOption(), "-A${Options.OPT_TARGETS}=Example"))
+      }
 
     result.succeeded()
     assertThat(File(srcDir, "test/Example.kt").exists()).isTrue()
@@ -1202,10 +1230,11 @@ class AutoValueKotlinExtensionTest {
 
   @Test
   fun getters() {
-    val result = compile(
-      forSourceString(
-        "test.Example",
-        """
+    val result =
+      compile(
+        forSourceString(
+          "test.Example",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -1214,9 +1243,10 @@ class AutoValueKotlinExtensionTest {
           abstract class Example {
             abstract String getValue();
           }
-        """.trimIndent()
+        """
+            .trimIndent()
+        )
       )
-    )
 
     result.succeeded()
     val generated = File(srcDir, "test/Example.kt")
@@ -1230,17 +1260,19 @@ class AutoValueKotlinExtensionTest {
             val `value`: String
           )
 
-        """.trimIndent()
+        """
+          .trimIndent()
       )
   }
 
   // Regression test for https://github.com/slackhq/auto-value-kotlin/issues/16
   @Test
   fun nonJsonClassesDoNotGetDefaults() {
-    val result = compile(
-      forSourceString(
-        "test.Example",
-        """
+    val result =
+      compile(
+        forSourceString(
+          "test.Example",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -1257,9 +1289,10 @@ class AutoValueKotlinExtensionTest {
               Example build();
             }
           }
-        """.trimIndent()
+        """
+            .trimIndent()
+        )
       )
-    )
 
     result.succeeded()
     val generated = File(srcDir, "test/Example.kt")
@@ -1296,17 +1329,19 @@ class AutoValueKotlinExtensionTest {
             }
           }
 
-        """.trimIndent()
+        """
+          .trimIndent()
       )
   }
 
   // Regression test for https://github.com/slackhq/auto-value-kotlin/issues/16
   @Test
   fun jsonClassesWithBuildersGetDefaults() {
-    val result = compile(
-      forSourceString(
-        "test.Example",
-        """
+    val result =
+      compile(
+        forSourceString(
+          "test.Example",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -1325,9 +1360,10 @@ class AutoValueKotlinExtensionTest {
               Example build();
             }
           }
-        """.trimIndent()
+        """
+            .trimIndent()
+        )
       )
-    )
 
     result.succeeded()
     val generated = File(srcDir, "test/Example.kt")
@@ -1366,7 +1402,8 @@ class AutoValueKotlinExtensionTest {
             }
           }
 
-        """.trimIndent()
+        """
+          .trimIndent()
       )
   }
 
@@ -1375,10 +1412,11 @@ class AutoValueKotlinExtensionTest {
   //  still kick in?
   @Test
   fun gettersMixed() {
-    val result = compile(
-      forSourceString(
-        "test.Example",
-        """
+    val result =
+      compile(
+        forSourceString(
+          "test.Example",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -1388,9 +1426,10 @@ class AutoValueKotlinExtensionTest {
             abstract String getValue();
             abstract String nonGetValue();
           }
-        """.trimIndent()
+        """
+            .trimIndent()
+        )
       )
-    )
 
     result.succeeded()
     val generated = File(srcDir, "test/Example.kt")
@@ -1420,17 +1459,19 @@ class AutoValueKotlinExtensionTest {
             }
           }
 
-        """.trimIndent()
+        """
+          .trimIndent()
       )
   }
 
   // Regression test for https://github.com/slackhq/auto-value-kotlin/issues/15
   @Test
   fun enumsAreNotShared() {
-    val result = compile(
-      forSourceString(
-        "test.Example",
-        """
+    val result =
+      compile(
+        forSourceString(
+          "test.Example",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -1444,11 +1485,12 @@ class AutoValueKotlinExtensionTest {
               INSTANCE
             }
           }
-        """.trimIndent()
-      ),
-      forSourceString(
-        "test.Example2",
         """
+            .trimIndent()
+        ),
+        forSourceString(
+          "test.Example2",
+          """
           package test;
 
           import com.google.auto.value.AutoValue;
@@ -1462,9 +1504,10 @@ class AutoValueKotlinExtensionTest {
               INSTANCE
             }
           }
-        """.trimIndent()
-      ),
-    )
+        """
+            .trimIndent()
+        ),
+      )
 
     result.succeeded()
   }
@@ -1477,12 +1520,12 @@ class AutoValueKotlinExtensionTest {
     vararg sourceFiles: JavaFileObject,
     compilerBody: Compiler.() -> Compiler = { this }
   ): CompilationSubject {
-    val compilation = javac()
-      .withOptions(compilerSrcOption())
-      .withProcessors(AutoValueKotlinProcessor())
-      .let(compilerBody)
-      .compile(*sourceFiles)
-    return assertAbout(compilations())
-      .that(compilation)
+    val compilation =
+      javac()
+        .withOptions(compilerSrcOption())
+        .withProcessors(AutoValueKotlinProcessor())
+        .let(compilerBody)
+        .compile(*sourceFiles)
+    return assertAbout(compilations()).that(compilation)
   }
 }
