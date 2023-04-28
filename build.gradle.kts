@@ -13,83 +13,77 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import com.diffplug.spotless.LineEnding
 import io.gitlab.arturbosch.detekt.Detekt
-import org.jetbrains.dokka.gradle.DokkaTask
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.net.URL
+import org.jetbrains.dokka.gradle.DokkaTask
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "1.5.31"
-  id("org.jetbrains.dokka") version "1.5.31"
+  kotlin("jvm") version "1.8.21"
+  id("org.jetbrains.dokka") version "1.8.10"
   id("com.google.devtools.ksp") version "1.8.21-1.0.11"
   id("com.diffplug.spotless") version "6.18.0"
   id("com.vanniktech.maven.publish") version "0.18.0"
   id("io.gitlab.arturbosch.detekt") version "1.18.1"
 }
 
-repositories {
-  mavenCentral()
-}
+repositories { mavenCentral() }
 
 pluginManager.withPlugin("java") {
-  configure<JavaPluginExtension> {
-    toolchain {
-      languageVersion.set(JavaLanguageVersion.of(17))
-    }
-  }
+  configure<JavaPluginExtension> { toolchain { languageVersion.set(JavaLanguageVersion.of(17)) } }
 
-  project.tasks.withType<JavaCompile>().configureEach {
-    options.release.set(8)
-  }
+  project.tasks.withType<JavaCompile>().configureEach { options.release.set(8) }
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions {
-    jvmTarget = "1.8"
-    @Suppress("SuspiciousCollectionReassignment")
-    freeCompilerArgs += listOf("-progressive", "-Xopt-in=kotlin.RequiresOptIn", "-Xopt-in=com.slack.auto.value.kotlin.ExperimentalAvkApi")
+  compilerOptions {
+    jvmTarget.set(JvmTarget.JVM_1_8)
+    freeCompilerArgs.addAll(
+      "-progressive",
+      "-Xopt-in=kotlin.RequiresOptIn",
+      "-Xopt-in=com.slack.auto.value.kotlin.ExperimentalAvkApi"
+    )
   }
 }
 
-tasks.withType<Detekt>().configureEach {
-  jvmTarget = "1.8"
-}
+tasks.withType<Detekt>().configureEach { jvmTarget = "1.8" }
 
-kotlin {
-  explicitApi()
-}
+kotlin { explicitApi() }
 
 tasks.named<DokkaTask>("dokkaHtml") {
   outputDirectory.set(rootDir.resolve("docs/0.x"))
   dokkaSourceSets.configureEach {
     skipDeprecated.set(true)
-    externalDocumentationLink {
-      url.set(URL("https://square.github.io/moshi/1.x/moshi/"))
-    }
+    externalDocumentationLink { url.set(URL("https://square.github.io/moshi/1.x/moshi/")) }
   }
 }
 
 spotless {
+  lineEndings = LineEnding.PLATFORM_NATIVE
   format("misc") {
     target("*.md", ".gitignore")
     trimTrailingWhitespace()
     endWithNewline()
   }
-  val ktlintVersion = "0.41.0"
-  val ktlintUserData = mapOf("indent_size" to "2", "continuation_indent_size" to "2")
+  val ktfmtVersion = "0.43"
   kotlin {
     target("**/*.kt")
-    ktlint(ktlintVersion).userData(ktlintUserData)
+    ktfmt(ktfmtVersion).googleStyle()
     trimTrailingWhitespace()
     endWithNewline()
     licenseHeaderFile("spotless/spotless.kt")
     targetExclude("**/spotless.kt")
   }
   kotlinGradle {
-    ktlint(ktlintVersion).userData(ktlintUserData)
+    ktfmt(ktfmtVersion).googleStyle()
     trimTrailingWhitespace()
     endWithNewline()
-    licenseHeaderFile("spotless/spotless.kt", "(import|plugins|buildscript|dependencies|pluginManagement|rootProject)")
+    licenseHeaderFile(
+      "spotless/spotless.kt",
+      "(import|plugins|buildscript|dependencies|pluginManagement|rootProject)"
+    )
   }
 }
 
@@ -109,6 +103,7 @@ tasks.withType<Test>().configureEach {
 }
 
 val moshiVersion = "1.14.0"
+
 dependencies {
   ksp("dev.zacsweers.autoservice:auto-service-ksp:1.0.0")
   implementation("com.squareup.moshi:moshi:$moshiVersion")

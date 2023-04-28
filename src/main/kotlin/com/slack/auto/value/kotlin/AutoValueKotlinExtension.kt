@@ -63,7 +63,9 @@ public class AutoValueKotlinExtension(
 
   override fun getSupportedOptions(): Set<String> = Options.ALL
 
-  override fun incrementalType(processingEnvironment: ProcessingEnvironment): IncrementalExtensionType {
+  override fun incrementalType(
+    processingEnvironment: ProcessingEnvironment
+  ): IncrementalExtensionType {
     // This is intentionally not incremental, we are generating into source sets directly
     return IncrementalExtensionType.UNKNOWN
   }
@@ -86,7 +88,10 @@ public class AutoValueKotlinExtension(
     classToExtend: String,
     isFinal: Boolean
   ): String? {
-    if (options.targets.isNotEmpty() && context.autoValueClass().simpleName.toString() !in options.targets) {
+    if (
+      options.targets.isNotEmpty() &&
+        context.autoValueClass().simpleName.toString() !in options.targets
+    ) {
       return null
     }
 
@@ -94,70 +99,63 @@ public class AutoValueKotlinExtension(
 
     val isTopLevel = avClass.nestingKind == NestingKind.TOP_LEVEL
     if (!isTopLevel) {
-      val isParentAv = isAnnotationPresent(
-        MoreElements.asType(avClass.enclosingElement),
-        AutoValue::class.java
-      )
+      val isParentAv =
+        isAnnotationPresent(MoreElements.asType(avClass.enclosingElement), AutoValue::class.java)
       if (!isParentAv) {
-        val diagnosticKind = if (options.ignoreNested) {
-          Diagnostic.Kind.WARNING
-        } else {
-          Diagnostic.Kind.ERROR
-        }
-        realMessager
-          .printMessage(
-            diagnosticKind,
-            "Cannot convert nested classes to Kotlin safely. Please move this to top-level first.",
-            avClass
-          )
+        val diagnosticKind =
+          if (options.ignoreNested) {
+            Diagnostic.Kind.WARNING
+          } else {
+            Diagnostic.Kind.ERROR
+          }
+        realMessager.printMessage(
+          diagnosticKind,
+          "Cannot convert nested classes to Kotlin safely. Please move this to top-level first.",
+          avClass
+        )
       }
     }
 
     // Check for non-builder nested classes, which cannot be converted with this
-    val nonBuilderNestedTypes = ElementFilter.typesIn(avClass.enclosedElements)
-      .filterNot { nestedType ->
-        context.builder()
-          .map { nestedType == it.builderType() }
-          .orElse(false)
+    val nonBuilderNestedTypes =
+      ElementFilter.typesIn(avClass.enclosedElements).filterNot { nestedType ->
+        context.builder().map { nestedType == it.builderType() }.orElse(false)
       }
 
     val (enums, nonEnums) = nonBuilderNestedTypes.partition { it.kind == ElementKind.ENUM }
 
-    val (nestedAvClasses, remainingTypes) = nonEnums.partition { isAnnotationPresent(it, AutoValue::class.java) }
+    val (nestedAvClasses, remainingTypes) =
+      nonEnums.partition { isAnnotationPresent(it, AutoValue::class.java) }
 
     if (remainingTypes.isNotEmpty()) {
       remainingTypes.forEach {
-        realMessager
-          .printMessage(
-            Diagnostic.Kind.ERROR,
-            "Cannot convert non-autovalue nested classes to Kotlin safely. Please move this to top-level first.",
-            it
-          )
+        realMessager.printMessage(
+          Diagnostic.Kind.ERROR,
+          "Cannot convert non-autovalue nested classes to Kotlin safely. Please move this to top-level first.",
+          it
+        )
       }
       return null
     }
 
     val collectedEnumsLocal = mutableMapOf<ClassName, TypeSpec>()
     for (enumType in enums) {
-      val (cn, spec) = EnumConversion.convert(
-        elements,
-        realMessager,
-        enumType
-      ) ?: continue
+      val (cn, spec) = EnumConversion.convert(elements, realMessager, enumType) ?: continue
       // If the AV class is Moshi-serializable, treat the enum as such too
-      val addJsonClass = isAnnotationPresent(avClass, JsonClass::class.java) &&
-        spec.annotationSpecs.none { it.typeName == JSON_CLASS_CN }
-      collectedEnumsLocal[cn] = if (addJsonClass) {
-        spec.toBuilder()
-          .addAnnotation(
-            AnnotationSpec.builder(JSON_CLASS_CN)
-              .addMember("generateAdapter = false")
-              .build()
-          )
-          .build()
-      } else {
-        spec
-      }
+      val addJsonClass =
+        isAnnotationPresent(avClass, JsonClass::class.java) &&
+          spec.annotationSpecs.none { it.typeName == JSON_CLASS_CN }
+      collectedEnumsLocal[cn] =
+        if (addJsonClass) {
+          spec
+            .toBuilder()
+            .addAnnotation(
+              AnnotationSpec.builder(JSON_CLASS_CN).addMember("generateAdapter = false").build()
+            )
+            .build()
+        } else {
+          spec
+        }
     }
 
     val classDoc = avClass.parseDocs(elements)
@@ -168,30 +166,29 @@ public class AutoValueKotlinExtension(
       return removeIf {
         val type = it.typeName
         if (type !is ClassName) return@removeIf false
-        (type.simpleName == "Redacted")
-          .also { wasRedacted ->
-            if (wasRedacted) {
-              redactedClassName = type
-            }
+        (type.simpleName == "Redacted").also { wasRedacted ->
+          if (wasRedacted) {
+            redactedClassName = type
           }
+        }
       }
     }
 
-    val properties = context.properties()
-      .entries
-      .associate { (propertyName, method) ->
-        val annotations = method.annotationMirrors
-          .map { AnnotationSpec.get(it) }
-          .filter { spec ->
-            if (spec.typeName == JSON_CN) {
-              // Don't include `@Json` if the name value is the same as the property name as it's
-              // redundant
-              method.getAnnotation(Json::class.java)!!.name != propertyName
-            } else {
-              true
+    val properties =
+      context.properties().entries.associate { (propertyName, method) ->
+        val annotations =
+          method.annotationMirrors
+            .map { AnnotationSpec.get(it) }
+            .filter { spec ->
+              if (spec.typeName == JSON_CN) {
+                // Don't include `@Json` if the name value is the same as the property name as it's
+                // redundant
+                method.getAnnotation(Json::class.java)!!.name != propertyName
+              } else {
+                true
+              }
             }
-          }
-          .toMutableList()
+            .toMutableList()
         val isNullable =
           annotations.removeIf { (it.typeName as ClassName).simpleName == "Nullable" }
         annotations.removeIf {
@@ -201,22 +198,25 @@ public class AutoValueKotlinExtension(
         val isAnOverride =
           annotations.removeIf { (it.typeName as ClassName).simpleName == "Override" }
         val isRedacted = annotations.anyRedacted()
-        propertyName to PropertyContext(
-          name = propertyName,
-          funName = method.simpleName.toString(),
-          type = method.returnType.asSafeTypeName().copy(nullable = isNullable),
-          annotations = annotations,
-          isOverride = isAnOverride,
-          isRedacted = isRedacted,
-          visibility = if (Modifier.PUBLIC in method.modifiers) KModifier.PUBLIC else KModifier.INTERNAL,
-          doc = method.parseDocs(elements)
-        )
+        propertyName to
+          PropertyContext(
+            name = propertyName,
+            funName = method.simpleName.toString(),
+            type = method.returnType.asSafeTypeName().copy(nullable = isNullable),
+            annotations = annotations,
+            isOverride = isAnOverride,
+            isRedacted = isRedacted,
+            visibility =
+              if (Modifier.PUBLIC in method.modifiers) KModifier.PUBLIC else KModifier.INTERNAL,
+            doc = method.parseDocs(elements)
+          )
       }
 
     val classAnnotations = avClass.classAnnotations().toMutableList()
-    val isClassRedacted = classAnnotations.anyRedacted() ||
-      // If all the properties are redacted, redacted the class?
-      properties.values.all { it.isRedacted }
+    val isClassRedacted =
+      classAnnotations.anyRedacted() ||
+        // If all the properties are redacted, redacted the class?
+        properties.values.all { it.isRedacted }
 
     val isParcelable = context.processingEnvironment().isParcelable(avClass)
 
@@ -231,11 +231,9 @@ public class AutoValueKotlinExtension(
     if (context.builder().isPresent) {
       val builder = context.builder().get()
       toBuilderMethods += builder.toBuilderMethods()
-      val propsList = properties.values.map {
-        CodeBlock.of("%1L·=·%1L", it.name)
-      }
-      toBuilderFunSpecs += builder.toBuilderMethods()
-        .map {
+      val propsList = properties.values.map { CodeBlock.of("%1L·=·%1L", it.name) }
+      toBuilderFunSpecs +=
+        builder.toBuilderMethods().map {
           // Assume it's just one with no params
           FunSpec.copyOf(it)
             .withDocsFrom(it)
@@ -252,8 +250,8 @@ public class AutoValueKotlinExtension(
       avkBuilder = AvkBuilder.from(builder, propertyTypes) { parseDocs(elements) }
 
       builderFactories += builder.builderMethods()
-      builderFactorySpecs += builder.builderMethods()
-        .map {
+      builderFactorySpecs +=
+        builder.builderMethods().map {
           FunSpec.copyOf(it)
             .withDocsFrom(it)
             .addStatement("TODO(%S)", "Replace this with the implementation from the source class")
@@ -261,8 +259,7 @@ public class AutoValueKotlinExtension(
         }
     }
 
-    val allMethods = ElementFilter.methodsIn(avClass.enclosedElements)
-      .toMutableSet()
+    val allMethods = ElementFilter.methodsIn(avClass.enclosedElements).toMutableSet()
 
     val staticCreators = mutableListOf<ExecutableElement>()
     val staticCreatorSpecs = mutableListOf<FunSpec>()
@@ -272,58 +269,48 @@ public class AutoValueKotlinExtension(
       .forEach { staticCreator ->
         allMethods.remove(staticCreator)
         staticCreators += staticCreator
-        val spec = FunSpec.copyOf(staticCreator)
-          .withDocsFrom(staticCreator)
-          .apply {
-            if (parameters.size > MAX_PARAMS) {
-              addAnnotation(
-                AnnotationSpec.builder(Suppress::class)
-                  .addMember("%S", "LongParameterList")
-                  .build()
-              )
+        val spec =
+          FunSpec.copyOf(staticCreator)
+            .withDocsFrom(staticCreator)
+            .apply {
+              if (parameters.size > MAX_PARAMS) {
+                addAnnotation(
+                  AnnotationSpec.builder(Suppress::class)
+                    .addMember("%S", "LongParameterList")
+                    .build()
+                )
+              }
             }
-          }
-          .build()
+            .build()
         val isFullCreator = spec.parameters.map { it.type } == properties.values.map { it.type }
         if (isFullCreator) {
           // Add deprecated copy of the original, hide from java
           val parameterString = spec.parameters.joinToString(", ") { it.name }
-          staticCreatorSpecs += spec.toBuilder()
-            .addAnnotation(
-              AnnotationSpec.builder(JvmName::class)
-                .addMember("%S", "-${spec.name}")
-                .build()
-            )
-            .addAnnotation(
-              deprecatedAnnotation(
-                "Use invoke()",
-                "${spec.returnType}($parameterString)"
+          staticCreatorSpecs +=
+            spec
+              .toBuilder()
+              .addAnnotation(
+                AnnotationSpec.builder(JvmName::class).addMember("%S", "-${spec.name}").build()
               )
-            )
-            .addStatement("%N(%L)", spec.name, parameterString)
-            .addStatement("TODO(%S)", "Remove this function. Use the above line to auto-migrate.")
-            .build()
+              .addAnnotation(
+                deprecatedAnnotation("Use invoke()", "${spec.returnType}($parameterString)")
+              )
+              .addStatement("%N(%L)", spec.name, parameterString)
+              .addStatement("TODO(%S)", "Remove this function. Use the above line to auto-migrate.")
+              .build()
           // Expose the original creator for java
-          val propsList = spec.parameters.map {
-            CodeBlock.of("%1L·=·%1L", it.name)
-          }
-          staticCreatorSpecs += spec.toBuilder(name = "invoke")
-            .addAnnotation(
-              AnnotationSpec.builder(JvmName::class)
-                .addMember("%S", spec.name)
-                .build()
-            )
-            .addModifiers(KModifier.OPERATOR)
-            .addStatement(
-              "return·%T(%L)",
-              avClass.asClassName(),
-              propsList.joinToCode(",·")
-            )
-            .build()
+          val propsList = spec.parameters.map { CodeBlock.of("%1L·=·%1L", it.name) }
+          staticCreatorSpecs +=
+            spec
+              .toBuilder(name = "invoke")
+              .addAnnotation(
+                AnnotationSpec.builder(JvmName::class).addMember("%S", spec.name).build()
+              )
+              .addModifiers(KModifier.OPERATOR)
+              .addStatement("return·%T(%L)", avClass.asClassName(), propsList.joinToCode(",·"))
+              .build()
         } else {
-          staticCreatorSpecs += spec.toBuilder()
-            .addStatement("TODO()")
-            .build()
+          staticCreatorSpecs += spec.toBuilder().addStatement("TODO()").build()
         }
       }
 
@@ -333,8 +320,7 @@ public class AutoValueKotlinExtension(
       .filter { it.simpleName.toString().startsWith("with") }
       .forEach { method ->
         val name = method.simpleName.toString()
-        val propertyName = name.removePrefix("with")
-          .replaceFirstChar { it.lowercase(Locale.US) }
+        val propertyName = name.removePrefix("with").replaceFirstChar { it.lowercase(Locale.US) }
         val prop = properties[propertyName] ?: return@forEach
         // Match return type
         val isValidReturnType = method.returnType.asSafeTypeName() == avType
@@ -346,100 +332,110 @@ public class AutoValueKotlinExtension(
         val isValidWith = isAutoValueWith || (isValidReturnType && isMatchingSignature)
         if (isValidWith) {
           allMethods -= method
-          witherSpecs += FunSpec.builder(name)
-            .addParameter(prop.name, prop.type)
-            .returns(avType)
-            .apply {
-              // If we have a builder, use it rather than copy() to pick up any normalization
-              // or checks it performs in building.
-              val toBuilderFun = toBuilderFunSpecs.find { it.parameters.isEmpty() }
-              if (toBuilderFun != null) {
-                val builderMethodName = context.builder().get()
-                  .setters().getValue(prop.name).first().simpleName.toString()
-                addStatement(
-                  "return %N().%L(%N).build()",
-                  toBuilderFun,
-                  builderMethodName,
-                  prop.name
-                )
-              } else {
-                addStatement("return copy(%1N = %1N)", prop.name)
+          witherSpecs +=
+            FunSpec.builder(name)
+              .addParameter(prop.name, prop.type)
+              .returns(avType)
+              .apply {
+                // If we have a builder, use it rather than copy() to pick up any normalization
+                // or checks it performs in building.
+                val toBuilderFun = toBuilderFunSpecs.find { it.parameters.isEmpty() }
+                if (toBuilderFun != null) {
+                  val builderMethodName =
+                    context
+                      .builder()
+                      .get()
+                      .setters()
+                      .getValue(prop.name)
+                      .first()
+                      .simpleName
+                      .toString()
+                  addStatement(
+                    "return %N().%L(%N).build()",
+                    toBuilderFun,
+                    builderMethodName,
+                    prop.name
+                  )
+                } else {
+                  addStatement("return copy(%1N = %1N)", prop.name)
+                }
               }
-            }
-            .build()
+              .build()
         }
       }
 
     // Get methods not defined in properties
-    val remainingMethods = allMethods
-      .asSequence()
-      .filterNot { it in propertyMethods }
-      .filterNot { it in toBuilderMethods }
-      .filterNot { it in staticCreators }
-      .filterNot { it in builderFactories }
-      .map { "${it.modifiers.joinToString(" ")} ${it.returnType} ${it.simpleName}(...)" }
-      .toList()
+    val remainingMethods =
+      allMethods
+        .asSequence()
+        .filterNot { it in propertyMethods }
+        .filterNot { it in toBuilderMethods }
+        .filterNot { it in staticCreators }
+        .filterNot { it in builderFactories }
+        .map { "${it.modifiers.joinToString(" ")} ${it.returnType} ${it.simpleName}(...)" }
+        .toList()
 
     // Look for static final fields
-    val staticConstants = ElementFilter.fieldsIn(avClass.enclosedElements)
-      .filter { Modifier.STATIC in it.modifiers }
-      .map { field ->
-        val type = field.asType().asSafeTypeName()
-        PropertySpec.builder(field.simpleName.toString(), type)
-          .apply {
-            val visibility = when {
-              Modifier.PRIVATE in field.modifiers -> KModifier.PRIVATE
-              Modifier.PUBLIC !in field.modifiers -> KModifier.INTERNAL
-              else -> null
-            }
-            visibility?.let { addModifiers(it) }
+    val staticConstants =
+      ElementFilter.fieldsIn(avClass.enclosedElements)
+        .filter { Modifier.STATIC in it.modifiers }
+        .map { field ->
+          val type = field.asType().asSafeTypeName()
+          PropertySpec.builder(field.simpleName.toString(), type)
+            .apply {
+              val visibility =
+                when {
+                  Modifier.PRIVATE in field.modifiers -> KModifier.PRIVATE
+                  Modifier.PUBLIC !in field.modifiers -> KModifier.INTERNAL
+                  else -> null
+                }
+              visibility?.let { addModifiers(it) }
 
-            field.constantValue?.let {
-              addModifiers(KModifier.CONST)
-              if (it is String) {
-                initializer("%S", it)
-              } else {
-                // Best-effort. We could be more precise with this, but it's noisy and annoying
-                initializer("%L", it)
+              field.constantValue?.let {
+                addModifiers(KModifier.CONST)
+                if (it is String) {
+                  initializer("%S", it)
+                } else {
+                  // Best-effort. We could be more precise with this, but it's noisy and annoying
+                  initializer("%L", it)
+                }
               }
-            } ?: run {
-              initializer("TODO()")
+                ?: run { initializer("TODO()") }
+
+              field.parseDocs(elements)?.let { addKdoc(it) }
             }
+            .build()
+        }
 
-            field.parseDocs(elements)?.let { addKdoc(it) }
-          }
-          .build()
-      }
-
-    val superclass = avClass.superclass.asSafeTypeName()
-      .takeUnless { it == ClassName("java.lang", "Object") }
+    val superclass =
+      avClass.superclass.asSafeTypeName().takeUnless { it == ClassName("java.lang", "Object") }
 
     collectedEnums += collectedEnumsLocal
-    val kClass = KotlinClass(
-      packageName = context.packageName(),
-      doc = classDoc,
-      name = avClass.simpleName.toString(),
-      visibility = avClass.visibility,
-      isRedacted = isClassRedacted,
-      isParcelable = isParcelable,
-      superClass = superclass,
-      interfaces = avClass.interfaces.associate { it.asSafeTypeName() to null },
-      typeParams = avClass.typeParameters.map { it.asTypeVariableName() },
-      properties = properties,
-      avkBuilder = avkBuilder,
-      toBuilderSpecs = toBuilderFunSpecs,
-      builderFactories = builderFactorySpecs,
-      staticCreators = staticCreatorSpecs,
-      withers = witherSpecs,
-      remainingMethods = remainingMethods,
-      classAnnotations = avClass.classAnnotations(),
-      redactedClassName = redactedClassName,
-      staticConstants = staticConstants,
-      isTopLevel = isTopLevel,
-      children = nestedAvClasses
-        .mapTo(LinkedHashSet()) { it.asClassName() }
-        .plus(collectedEnumsLocal.keys)
-    )
+    val kClass =
+      KotlinClass(
+        packageName = context.packageName(),
+        doc = classDoc,
+        name = avClass.simpleName.toString(),
+        visibility = avClass.visibility,
+        isRedacted = isClassRedacted,
+        isParcelable = isParcelable,
+        superClass = superclass,
+        interfaces = avClass.interfaces.associate { it.asSafeTypeName() to null },
+        typeParams = avClass.typeParameters.map { it.asTypeVariableName() },
+        properties = properties,
+        avkBuilder = avkBuilder,
+        toBuilderSpecs = toBuilderFunSpecs,
+        builderFactories = builderFactorySpecs,
+        staticCreators = staticCreatorSpecs,
+        withers = witherSpecs,
+        remainingMethods = remainingMethods,
+        classAnnotations = avClass.classAnnotations(),
+        redactedClassName = redactedClassName,
+        staticConstants = staticConstants,
+        isTopLevel = isTopLevel,
+        children =
+          nestedAvClasses.mapTo(LinkedHashSet()) { it.asClassName() }.plus(collectedEnumsLocal.keys)
+      )
 
     collectedKclassees[context.autoValueClass().asClassName()] = kClass
 
@@ -453,22 +449,18 @@ private fun AvkBuilder.Companion.from(
   parseDocs: Element.() -> String?
 ): AvkBuilder {
   // Setters
-  val props = builderContext.setters().entries.map { (prop, setters) ->
-    val type = propertyTypes.getValue(prop)
-    BuilderProperty(
-      prop,
-      type,
-      setters.mapTo(LinkedHashSet()) {
-        FunSpec.copyOf(it)
-          .withDocsFrom(it, parseDocs)
-          .build()
-      }
-    )
-  }
+  val props =
+    builderContext.setters().entries.map { (prop, setters) ->
+      val type = propertyTypes.getValue(prop)
+      BuilderProperty(
+        prop,
+        type,
+        setters.mapTo(LinkedHashSet()) { FunSpec.copyOf(it).withDocsFrom(it, parseDocs).build() }
+      )
+    }
 
-  val builderMethods = builderContext.setters().values.flatten()
-    .plus(builderContext.autoBuildMethod())
-    .toMutableSet()
+  val builderMethods =
+    builderContext.setters().values.flatten().plus(builderContext.autoBuildMethod()).toMutableSet()
 
   if (builderContext.buildMethod().isPresent) {
     builderMethods += builderContext.buildMethod().get()
@@ -489,16 +481,15 @@ private fun AvkBuilder.Companion.from(
     doc = builderContext.builderType().parseDocs(),
     visibility = builderContext.builderType().visibility,
     builderProps = props,
-    buildFun = builderContext.buildMethod()
-      .map {
-        FunSpec.copyOf(it)
-          .withDocsFrom(it, parseDocs)
-          .build()
-      }
-      .orElse(null),
-    autoBuildFun = FunSpec.copyOf(builderContext.autoBuildMethod())
-      .withDocsFrom(builderContext.autoBuildMethod(), parseDocs)
-      .build(),
+    buildFun =
+      builderContext
+        .buildMethod()
+        .map { FunSpec.copyOf(it).withDocsFrom(it, parseDocs).build() }
+        .orElse(null),
+    autoBuildFun =
+      FunSpec.copyOf(builderContext.autoBuildMethod())
+        .withDocsFrom(builderContext.autoBuildMethod(), parseDocs)
+        .build(),
     remainingMethods = remainingMethods,
     classAnnotations = builderContext.builderType().classAnnotations()
   )

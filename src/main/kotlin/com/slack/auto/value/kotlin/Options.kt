@@ -21,9 +21,8 @@ public class Options(optionsMap: Map<String, String>) {
 
   public val srcDir: File = optionsMap[OPT_SRC]?.let { File(it) } ?: error("Missing src dir option")
 
-  public val targets: Set<String> = optionsMap[OPT_TARGETS]?.splitToSequence(":")
-    ?.toSet()
-    ?: emptySet()
+  public val targets: Set<String> =
+    optionsMap[OPT_TARGETS]?.splitToSequence(":")?.toSet() ?: emptySet()
 
   public val ignoreNested: Boolean = optionsMap[OPT_IGNORE_NESTED]?.toBooleanStrict() ?: false
 

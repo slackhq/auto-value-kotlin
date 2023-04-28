@@ -32,10 +32,11 @@ public data class PropertyContext(
   val isRedacted: Boolean,
   val visibility: KModifier,
   val doc: String?,
-  val defaultValue: CodeBlock? = when {
-    type.isNullable -> CodeBlock.of("null")
-    else -> type.defaultPrimitiveValue().takeIf { it.toString() != "null" }
-  }
+  val defaultValue: CodeBlock? =
+    when {
+      type.isNullable -> CodeBlock.of("null")
+      else -> type.defaultPrimitiveValue().takeIf { it.toString() != "null" }
+    }
 ) {
   public val usesGet: Boolean = name.startsWith("get") || funName.startsWith("get")
 
