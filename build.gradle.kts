@@ -42,8 +42,7 @@ tasks.withType<KotlinCompile>().configureEach {
     jvmTarget.set(JvmTarget.JVM_1_8)
     freeCompilerArgs.addAll(
       "-progressive",
-      "-Xopt-in=kotlin.RequiresOptIn",
-      "-Xopt-in=com.slack.auto.value.kotlin.ExperimentalAvkApi"
+      "-opt-in=com.slack.auto.value.kotlin.ExperimentalAvkApi"
     )
   }
 }
