@@ -15,6 +15,7 @@
  */
 @file:Suppress("TooManyFunctions")
 @file:OptIn(DelicateKotlinPoetApi::class)
+
 package com.slack.auto.value.kotlin
 
 import com.google.auto.common.Visibility
@@ -70,30 +71,27 @@ import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-internal val NONNULL_ANNOTATIONS = setOf(
-  "NonNull",
-  "NotNull",
-  "Nonnull"
-)
+internal val NONNULL_ANNOTATIONS = setOf("NonNull", "NotNull", "Nonnull")
 
 internal val PARCELIZE = ClassName("kotlinx.parcelize", "Parcelize")
 
-internal val INTRINSIC_IMPORTS = setOf(
-  "import java.lang.String",
-  "import java.lang.CharSequence",
-  "import java.lang.Boolean",
-  "import java.lang.Byte",
-  "import java.lang.Short",
-  "import java.lang.Char",
-  "import java.lang.Int",
-  "import java.lang.Float",
-  "import java.lang.Double",
-  "import java.lang.Object",
-  "import java.util.Map",
-  "import java.util.List",
-  "import java.util.Set",
-  "import java.util.Collection"
-)
+internal val INTRINSIC_IMPORTS =
+  setOf(
+    "import java.lang.String",
+    "import java.lang.CharSequence",
+    "import java.lang.Boolean",
+    "import java.lang.Byte",
+    "import java.lang.Short",
+    "import java.lang.Char",
+    "import java.lang.Int",
+    "import java.lang.Float",
+    "import java.lang.Double",
+    "import java.lang.Object",
+    "import java.util.Map",
+    "import java.util.List",
+    "import java.util.Set",
+    "import java.util.Collection"
+  )
 
 /** Regex used for finding references in javadoc links */
 internal const val DOC_LINK_REGEX = "[0-9A-Za-z._]*"
@@ -137,20 +135,13 @@ public fun TypeName.normalize(): TypeName {
 @ExperimentalAvkApi
 public fun TypeElement.classAnnotations(): List<AnnotationSpec> {
   return annotationMirrors
-    .map {
-      @Suppress("DEPRECATION")
-      AnnotationSpec.get(it)
-    }
+    .map { @Suppress("DEPRECATION") AnnotationSpec.get(it) }
     .filterNot { (it.typeName as ClassName).packageName == "com.google.auto.value" }
     .filterNot { (it.typeName as ClassName).simpleName == "Metadata" }
     .map { spec ->
       if ((spec.typeName as ClassName).simpleName == "JsonClass") {
         // Strip the 'generator = "avm"' off of this if present
-        spec.toBuilder()
-          .apply {
-            members.removeIf { "avm" in it.toString() }
-          }
-          .build()
+        spec.toBuilder().apply { members.removeIf { "avm" in it.toString() } }.build()
       } else {
         spec
       }
@@ -168,7 +159,9 @@ public fun TypeName.defaultPrimitiveValue(): CodeBlock =
     FLOAT -> CodeBlock.of("0f")
     LONG -> CodeBlock.of("0L")
     DOUBLE -> CodeBlock.of("0.0")
-    UNIT, Void::class.asTypeName(), NOTHING -> {
+    UNIT,
+    Void::class.asTypeName(),
+    NOTHING -> {
       throw IllegalStateException("Parameter with void, Unit, or Nothing type is illegal")
     }
     else -> CodeBlock.of("null")
@@ -188,8 +181,7 @@ public fun FunSpec.Companion.copyOf(method: ExecutableElement): FunSpec.Builder 
   var modifiers: Set<Modifier> = method.modifiers
 
   val methodName = method.simpleName.toString()
-  val funBuilder = builder(methodName)
-    .addModifiers(method.visibility)
+  val funBuilder = builder(methodName).addModifiers(method.visibility)
 
   modifiers = modifiers.toMutableSet()
   modifiers.remove(Modifier.ABSTRACT)
@@ -203,10 +195,8 @@ public fun FunSpec.Companion.copyOf(method: ExecutableElement): FunSpec.Builder 
   funBuilder.returns(method.returnType.asSafeTypeName())
   funBuilder.addParameters(ParameterSpec.parametersWithNullabilityOf(method))
   if (method.isVarArgs) {
-    funBuilder.parameters[funBuilder.parameters.lastIndex] = funBuilder.parameters.last()
-      .toBuilder()
-      .addModifiers(KModifier.VARARG)
-      .build()
+    funBuilder.parameters[funBuilder.parameters.lastIndex] =
+      funBuilder.parameters.last().toBuilder().addModifiers(KModifier.VARARG).build()
   }
 
   if (method.thrownTypes.isNotEmpty()) {
@@ -222,18 +212,20 @@ public fun FunSpec.Companion.copyOf(method: ExecutableElement): FunSpec.Builder 
 }
 
 @ExperimentalAvkApi
-public fun ParameterSpec.Companion.parametersWithNullabilityOf(method: ExecutableElement): List<ParameterSpec> =
-  method.parameters.map(ParameterSpec.Companion::getWithNullability)
+public fun ParameterSpec.Companion.parametersWithNullabilityOf(
+  method: ExecutableElement
+): List<ParameterSpec> = method.parameters.map(ParameterSpec.Companion::getWithNullability)
 
 @Suppress("DEPRECATION")
 @ExperimentalAvkApi
 public fun ParameterSpec.Companion.getWithNullability(element: VariableElement): ParameterSpec {
   val name = element.simpleName.toString()
   val isNullable =
-    element.annotationMirrors.any { (it.annotationType.asElement() as TypeElement).simpleName.toString() == "Nullable" }
+    element.annotationMirrors.any {
+      (it.annotationType.asElement() as TypeElement).simpleName.toString() == "Nullable"
+    }
   val type = element.asType().asSafeTypeName().copy(nullable = isNullable)
-  return builder(name, type)
-    .build()
+  return builder(name, type).build()
 }
 
 /** Cleans up the generated doc and translates some html to equivalent markdown for Kotlin docs. */
@@ -241,7 +233,8 @@ public fun ParameterSpec.Companion.getWithNullability(element: VariableElement):
 public fun cleanUpDoc(doc: String): String {
   // TODO not covered yet
   //  {@link TimeFormatter#getDateTimeString(SlackDateTime)}
-  return doc.replace("<em>", "*")
+  return doc
+    .replace("<em>", "*")
     .replace("</em>", "*")
     .replace("<p>", "")
     // JavaParser adds a couple spaces to the beginning of these for some reason
@@ -262,12 +255,14 @@ public fun cleanUpDoc(doc: String): String {
       "[$foo.$bar]"
     }
     // {@linkplain Foo baz} -> [baz][Foo]
-    .replace("\\{@linkplain ($DOC_LINK_REGEX) ($DOC_LINK_REGEX)}".toRegex()) { result: MatchResult ->
+    .replace("\\{@linkplain ($DOC_LINK_REGEX) ($DOC_LINK_REGEX)}".toRegex()) { result: MatchResult
+      ->
       val (foo, baz) = result.destructured
       "[$baz][$foo]"
     }
     // {@linkplain Foo#bar baz} -> [baz][Foo.bar]
-    .replace("\\{@linkplain ($DOC_LINK_REGEX)#($DOC_LINK_REGEX) ($DOC_LINK_REGEX)}".toRegex()) { result: MatchResult ->
+    .replace("\\{@linkplain ($DOC_LINK_REGEX)#($DOC_LINK_REGEX) ($DOC_LINK_REGEX)}".toRegex()) {
+      result: MatchResult ->
       val (foo, bar, baz) = result.destructured
       "[$baz][$foo.$bar]"
     }
@@ -289,12 +284,10 @@ public fun FunSpec.Builder.withDocsFrom(
 
 @ExperimentalAvkApi
 public fun ProcessingEnvironment.isParcelable(element: TypeElement): Boolean {
-  return elementUtils
-    .getTypeElement("android.os.Parcelable")
-    ?.asType()
-    ?.let { parcelableClass ->
-      element.interfaces.any { it.isClassOfType(typeUtils, parcelableClass) }
-    } ?: false
+  return elementUtils.getTypeElement("android.os.Parcelable")?.asType()?.let { parcelableClass ->
+    element.interfaces.any { it.isClassOfType(typeUtils, parcelableClass) }
+  }
+    ?: false
 }
 
 private fun TypeMirror.isClassOfType(types: Types, other: TypeMirror?) =
@@ -302,19 +295,19 @@ private fun TypeMirror.isClassOfType(types: Types, other: TypeMirror?) =
 
 @ExperimentalAvkApi
 public val Element.visibility: KModifier
-  get() = when (Visibility.effectiveVisibilityOfElement(this)!!) {
-    PRIVATE -> KModifier.PRIVATE
-    DEFAULT -> KModifier.INTERNAL
-    PROTECTED -> KModifier.PROTECTED
-    PUBLIC -> KModifier.PUBLIC
-  }
+  get() =
+    when (Visibility.effectiveVisibilityOfElement(this)!!) {
+      PRIVATE -> KModifier.PRIVATE
+      DEFAULT -> KModifier.INTERNAL
+      PROTECTED -> KModifier.PROTECTED
+      PUBLIC -> KModifier.PUBLIC
+    }
 
 @ExperimentalAvkApi
 @OptIn(ExperimentalPathApi::class)
 public fun TypeSpec.writeCleanlyTo(packageName: String, dir: String) {
   val file = File(dir).toPath()
-  val outputPath = FileSpec.get(packageName, this)
-    .writeToLocal(file)
+  val outputPath = FileSpec.get(packageName, this).writeToLocal(file)
   val text = outputPath.readText()
   // Post-process to remove any kotlin intrinsic types
   // Is this wildly inefficient? yes. Does it really matter in our cases? nah
@@ -349,12 +342,14 @@ public fun TypeSpec.writeCleanlyTo(packageName: String, dir: String) {
 
 /** Best-effort checks if the string is an import from `kotlin.*` */
 @Suppress("MagicNumber")
-private val String.isKotlinPackageImport: Boolean get() = startsWith("import kotlin.") &&
-  // Looks like a class
-  // 14 is the length of `import kotlin.`
-  get(14).isUpperCase() &&
-  // Exclude if it's importing a nested element
-  '.' !in removePrefix("import kotlin.")
+private val String.isKotlinPackageImport: Boolean
+  get() =
+    startsWith("import kotlin.") &&
+      // Looks like a class
+      // 14 is the length of `import kotlin.`
+      get(14).isUpperCase() &&
+      // Exclude if it's importing a nested element
+      '.' !in removePrefix("import kotlin.")
 
 private fun FileSpec.writeToLocal(directory: Path): Path {
   require(Files.notExists(directory) || Files.isDirectory(directory)) {
@@ -370,10 +365,9 @@ private fun FileSpec.writeToLocal(directory: Path): Path {
   Files.createDirectories(srcDirectory)
 
   val outputPath = srcDirectory.resolve("$name.kt")
-  OutputStreamWriter(
-    Files.newOutputStream(outputPath),
-    StandardCharsets.UTF_8
-  ).use { writer -> writeTo(writer) }
+  OutputStreamWriter(Files.newOutputStream(outputPath), StandardCharsets.UTF_8).use { writer ->
+    writeTo(writer)
+  }
   return outputPath
 }
 
