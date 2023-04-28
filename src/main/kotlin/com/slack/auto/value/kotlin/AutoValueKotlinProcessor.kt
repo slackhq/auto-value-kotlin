@@ -21,9 +21,6 @@ import com.google.auto.value.extension.AutoValueExtension
 import com.google.auto.value.processor.AutoValueProcessor
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.TypeSpec
-import okio.Buffer
-import okio.blackholeSink
-import okio.buffer
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.Reader
@@ -54,13 +51,18 @@ import javax.tools.JavaFileManager.Location
 import javax.tools.JavaFileObject
 import javax.tools.JavaFileObject.Kind.CLASS
 import javax.tools.JavaFileObject.Kind.OTHER
+import okio.Buffer
+import okio.blackholeSink
+import okio.buffer
 
 @SupportedOptions(Options.OPT_SRC, Options.OPT_IGNORE_NESTED, Options.OPT_TARGETS)
 @AutoService(Processor::class)
 public class AutoValueKotlinProcessor : AbstractProcessor() {
 
-  private val collectedClasses: MutableMap<ClassName, KotlinClass> = ConcurrentHashMap<ClassName, KotlinClass>()
-  private val collectedEnums: MutableMap<ClassName, TypeSpec> = ConcurrentHashMap<ClassName, TypeSpec>()
+  private val collectedClasses: MutableMap<ClassName, KotlinClass> =
+    ConcurrentHashMap<ClassName, KotlinClass>()
+  private val collectedEnums: MutableMap<ClassName, TypeSpec> =
+    ConcurrentHashMap<ClassName, TypeSpec>()
   private lateinit var options: Options
 
   override fun init(processingEnv: ProcessingEnvironment) {
@@ -77,10 +79,7 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
   }
 
   @Suppress("ReturnCount")
-  override fun process(
-    annotations: Set<TypeElement>,
-    roundEnv: RoundEnvironment
-  ): Boolean {
+  override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
     val avClasses = roundEnv.getElementsAnnotatedWith(AutoValue::class.java)
     if (avClasses.isNotEmpty()) {
       processAvElements(annotations, roundEnv, avClasses)
@@ -92,10 +91,8 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
         processingEnv.messager.printMessage(ERROR, "No AutoValue classes found")
         return false
       }
-      val srcDir =
-        processingEnv.options[Options.OPT_SRC] ?: error("Missing src dir option")
-      val roots = collectedClasses.filterValues { it.isTopLevel }
-        .toMutableMap()
+      val srcDir = processingEnv.options[Options.OPT_SRC] ?: error("Missing src dir option")
+      val roots = collectedClasses.filterValues { it.isTopLevel }.toMutableMap()
       for ((_, root) in roots) {
         val spec = composeTypeSpec(root)
         spec.writeCleanlyTo(root.packageName, srcDir)
@@ -106,7 +103,8 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
 
   private fun composeTypeSpec(kotlinClass: KotlinClass): TypeSpec {
     val spec = kotlinClass.toTypeSpec(processingEnv.messager)
-    return spec.toBuilder()
+    return spec
+      .toBuilder()
       .apply {
         for (child in kotlinClass.children) {
           val enumChild = collectedEnums.remove(child)
@@ -114,8 +112,9 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
             addType(enumChild)
             continue
           }
-          val childKotlinClass = collectedClasses.remove(child)
-            ?: error("Missing child class $child for parent ${kotlinClass.name}")
+          val childKotlinClass =
+            collectedClasses.remove(child)
+              ?: error("Missing child class $child for parent ${kotlinClass.name}")
           addType(composeTypeSpec(childKotlinClass))
         }
       }
@@ -127,29 +126,38 @@ public class AutoValueKotlinProcessor : AbstractProcessor() {
     roundEnv: RoundEnvironment,
     avClasses: Set<Element>
   ) {
-    if (options.targets.isNotEmpty() && avClasses.none { it.simpleName.toString() in options.targets }) {
+    if (
+      options.targets.isNotEmpty() && avClasses.none { it.simpleName.toString() in options.targets }
+    ) {
       // Nothing to do this round
       return
     }
 
     // Load extensions ourselves
     @Suppress("TooGenericExceptionCaught", "SwallowedException")
-    val extensions = try {
-      ServiceLoader.load(AutoValueExtension::class.java, AutoValueExtension::class.java.classLoader).toList()
-    } catch (e: Exception) {
-      emptyList()
-    }
+    val extensions =
+      try {
+        ServiceLoader.load(
+            AutoValueExtension::class.java,
+            AutoValueExtension::class.java.classLoader
+          )
+          .toList()
+      } catch (e: Exception) {
+        emptyList()
+      }
 
     // Make our extension
     val avkExtension = AutoValueKotlinExtension(processingEnv.messager, options)
 
     // Create an in-memory av processor and run it
     val avProcessor = AutoValueProcessor(extensions + avkExtension)
-    avProcessor.init(object : ProcessingEnvironment by processingEnv {
-      override fun getMessager(): Messager = NoOpMessager
+    avProcessor.init(
+      object : ProcessingEnvironment by processingEnv {
+        override fun getMessager(): Messager = NoOpMessager
 
-      override fun getFiler(): Filer = NoOpFiler
-    })
+        override fun getFiler(): Filer = NoOpFiler
+      }
+    )
     avProcessor.process(annotations, roundEnv)
 
     // Save off our extracted classes
@@ -163,11 +171,7 @@ private object NoOpMessager : Messager {
     // Do nothing
   }
 
-  override fun printMessage(
-    kind: Kind,
-    msg: CharSequence,
-    element: Element?
-  ) {
+  override fun printMessage(kind: Kind, msg: CharSequence, element: Element?) {
     // Do nothing
   }
 

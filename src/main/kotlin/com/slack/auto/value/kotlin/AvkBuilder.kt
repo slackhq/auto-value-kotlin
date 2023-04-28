@@ -44,19 +44,15 @@ public data class AvkBuilder(
 
   @Suppress("LongMethod")
   public fun createType(messager: Messager): TypeSpec {
-    val builder = TypeSpec.classBuilder(name)
-      .addModifiers(visibility)
-      .addAnnotations(classAnnotations)
+    val builder =
+      TypeSpec.classBuilder(name).addModifiers(visibility).addAnnotations(classAnnotations)
 
-    val constructorBuilder = FunSpec.constructorBuilder()
-      .addModifiers(INTERNAL)
+    val constructorBuilder = FunSpec.constructorBuilder().addModifiers(INTERNAL)
 
     @Suppress("MagicNumber")
     if (builderProps.size >= MAX_PARAMS) {
       builder.addAnnotation(
-        AnnotationSpec.builder(Suppress::class)
-          .addMember("%S", "LongParameterList")
-          .build()
+        AnnotationSpec.builder(Suppress::class).addMember("%S", "LongParameterList").build()
       )
     }
 
@@ -64,44 +60,47 @@ public data class AvkBuilder(
 
     for ((propName, type, setters) in builderProps) {
       // Add param to constructor
-      val defaultValue = if (type.isNullable) {
-        CodeBlock.of("null")
-      } else {
-        type.defaultPrimitiveValue()
-      }
+      val defaultValue =
+        if (type.isNullable) {
+          CodeBlock.of("null")
+        } else {
+          type.defaultPrimitiveValue()
+        }
       val useNullablePropType = defaultValue.toString() == "null"
-      val param = ParameterSpec.builder(propName, type.copy(nullable = useNullablePropType))
-        .defaultValue(defaultValue)
-        .build()
+      val param =
+        ParameterSpec.builder(propName, type.copy(nullable = useNullablePropType))
+          .defaultValue(defaultValue)
+          .build()
       constructorBuilder.addParameter(param)
 
       // Add private properties
-      val propSpec = PropertySpec.builder(propName, param.type)
-        .addModifiers(PRIVATE)
-        .mutable()
-        .initializer("%N", param.name)
-        .build()
+      val propSpec =
+        PropertySpec.builder(propName, param.type)
+          .addModifiers(PRIVATE)
+          .mutable()
+          .initializer("%N", param.name)
+          .build()
       builder.addProperty(propSpec)
 
       // Add build() assignment block
-      val extraCheck = if (type.isNullable || !useNullablePropType) {
-        CodeBlock.of("")
-      } else {
-        CodeBlock.of("·?:·error(%S)", "${propSpec.name} == null")
-      }
+      val extraCheck =
+        if (type.isNullable || !useNullablePropType) {
+          CodeBlock.of("")
+        } else {
+          CodeBlock.of("·?:·error(%S)", "${propSpec.name} == null")
+        }
       propsToCreateWith += CodeBlock.of("%1N·=·%1N%2L", propSpec, extraCheck)
 
       for (setter in setters) {
         if (setter.parameters.size != 1) {
-          messager.printMessage(
-            WARNING,
-            "Setter with surprising params: ${setter.name}"
-          )
+          messager.printMessage(WARNING, "Setter with surprising params: ${setter.name}")
         }
-        val setterSpec = setter.toBuilder()
-          // Assume this is a normal setter
-          .addStatement("return·apply·{·this.%N·= %N }", propSpec, setter.parameters[0])
-          .build()
+        val setterSpec =
+          setter
+            .toBuilder()
+            // Assume this is a normal setter
+            .addStatement("return·apply·{·this.%N·= %N }", propSpec, setter.parameters[0])
+            .build()
         builder.addFunction(setterSpec)
       }
     }
@@ -112,7 +111,8 @@ public data class AvkBuilder(
 
     // AutoBuild
     builder.addFunction(
-      autoBuildFun.toBuilder()
+      autoBuildFun
+        .toBuilder()
         .addStatement(
           "return·%T(%L)",
           autoBuildFun.returnType!!,
@@ -125,7 +125,9 @@ public data class AvkBuilder(
       builder.addFunction(
         FunSpec.builder("placeholder")
           .apply {
-            addComment("TODO This is a placeholder to mention the following methods need to be moved manually over:")
+            addComment(
+              "TODO This is a placeholder to mention the following methods need to be moved manually over:"
+            )
             for (remaining in remainingMethods) {
               addComment("  $remaining")
             }
@@ -140,7 +142,11 @@ public data class AvkBuilder(
   }
 
   @ExperimentalAvkApi
-  public data class BuilderProperty(val name: String, val type: TypeName, val setters: Set<FunSpec>)
+  public data class BuilderProperty(
+    val name: String,
+    val type: TypeName,
+    val setters: Set<FunSpec>
+  )
 
   // Public for extension
   public companion object
