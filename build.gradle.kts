@@ -21,7 +21,7 @@ import java.net.URL
 plugins {
   kotlin("jvm") version "1.5.31"
   id("org.jetbrains.dokka") version "1.5.31"
-  id("com.google.devtools.ksp") version "1.5.31-1.0.0"
+  id("com.google.devtools.ksp") version "1.8.21-1.0.11"
   id("com.diffplug.spotless") version "6.0.0"
   id("com.vanniktech.maven.publish") version "0.25.2"
   id("io.gitlab.arturbosch.detekt") version "1.18.1"
@@ -112,11 +112,11 @@ val moshiVersion = "1.12.0"
 dependencies {
   ksp("dev.zacsweers.autoservice:auto-service-ksp:1.0.0")
   implementation("com.squareup.moshi:moshi:$moshiVersion")
-  implementation("com.google.auto.service:auto-service:1.0")
+  implementation("com.google.auto.service:auto-service:1.0.1")
   implementation("com.squareup:kotlinpoet:1.10.1")
   implementation("com.squareup.okio:okio:3.0.0")
   implementation("com.google.auto.value:auto-value:1.8.2")
-  implementation("com.google.auto.value:auto-value-annotations:1.8.2")
+  implementation("com.google.auto.value:auto-value-annotations:1.10.1")
   testImplementation("junit:junit:4.13.2")
   testImplementation("com.google.truth:truth:1.1.3")
   testImplementation("org.jetbrains.kotlin:kotlin-test:1.5.31")
