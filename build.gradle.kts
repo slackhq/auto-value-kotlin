@@ -116,7 +116,7 @@ dependencies {
   implementation("com.squareup:kotlinpoet:1.10.1")
   implementation("com.squareup.okio:okio:3.0.0")
   implementation("com.google.auto.value:auto-value:1.8.2")
-  implementation("com.google.auto.value:auto-value-annotations:1.8.2")
+  implementation("com.google.auto.value:auto-value-annotations:1.10.1")
   testImplementation("junit:junit:4.13.2")
   testImplementation("com.google.truth:truth:1.1.3")
   testImplementation("org.jetbrains.kotlin:kotlin-test:1.5.31")
