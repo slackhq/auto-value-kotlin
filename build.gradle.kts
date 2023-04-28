@@ -120,7 +120,7 @@ dependencies {
   testImplementation("junit:junit:4.13.2")
   testImplementation("com.google.truth:truth:1.1.3")
   testImplementation("org.jetbrains.kotlin:kotlin-test:1.5.31")
-  testImplementation("com.google.testing.compile:compile-testing:0.19")
+  testImplementation("com.google.testing.compile:compile-testing:0.21.0")
   testImplementation("com.ryanharter.auto.value:auto-value-moshi-extension:1.1.0")
   testImplementation("com.ryanharter.auto.value:auto-value-parcel:0.2.9")
   testImplementation("com.gabrielittner.auto.value:auto-value-with:1.1.1")
