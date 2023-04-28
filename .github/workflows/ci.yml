@@ -1,6 +1,20 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  # Only run push on main
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**/*.md'
+  # Always run on PRs
+  pull_request:
+    branches: [ main ]
+  merge_group:
+
+concurrency:
+  group: 'ci-${{ github.event.merge_group.head_ref || github.head_ref }}-${{ github.workflow }}'
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -16,15 +30,6 @@ jobs:
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v1
 
-      - name: Generate cache key
-        run: ./.github/workflows/checksum.sh checksum.txt
-
-      - uses: actions/cache@v2
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('checksum.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
       - name: Configure JDK
         uses: actions/setup-java@v2
         with:
@@ -32,7 +37,17 @@ jobs:
           java-version: '17'
 
       - name: Test
-        run: ./gradlew build check
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: build check
+
+      - name: (Fail-only) Upload build reports
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: reports
+          path: |
+            **/build/reports/**
 
       - name: Publish (default branch only)
         if: github.repository == 'slackhq/auto-value-kotlin' && github.ref == 'refs/heads/main'
