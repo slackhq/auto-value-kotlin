@@ -21,7 +21,7 @@ import java.net.URL
 plugins {
   kotlin("jvm") version "1.5.31"
   id("org.jetbrains.dokka") version "1.5.31"
-  id("com.google.devtools.ksp") version "1.5.31-1.0.0"
+  id("com.google.devtools.ksp") version "1.8.21-1.0.11"
   id("com.diffplug.spotless") version "6.0.0"
   id("com.vanniktech.maven.publish") version "0.18.0"
   id("io.gitlab.arturbosch.detekt") version "1.18.1"
