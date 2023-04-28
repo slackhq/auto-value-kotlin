@@ -25,7 +25,7 @@ plugins {
   id("org.jetbrains.dokka") version "1.8.10"
   id("com.google.devtools.ksp") version "1.8.21-1.0.11"
   id("com.diffplug.spotless") version "6.18.0"
-  id("com.vanniktech.maven.publish") version "0.18.0"
+  id("com.vanniktech.maven.publish") version "0.25.2"
   id("io.gitlab.arturbosch.detekt") version "1.18.1"
 }
 
