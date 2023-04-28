@@ -178,13 +178,13 @@ class AutoValueKotlinExtensionTest {
           val aDouble: Double = 0.0,
           @get:JvmName("redactedString")
           @Redacted
-          val redactedString: String
+          val redactedString: String,
         ) : Parcelable {
           @JvmSynthetic
           @JvmName("-value")
           @Deprecated(
             message = "Use the property",
-            replaceWith = ReplaceWith("value")
+            replaceWith = ReplaceWith("value"),
           )
           fun `value`(): String {
             `value`()
@@ -195,7 +195,7 @@ class AutoValueKotlinExtensionTest {
           @JvmName("-nullableValue")
           @Deprecated(
             message = "Use the property",
-            replaceWith = ReplaceWith("nullableValue")
+            replaceWith = ReplaceWith("nullableValue"),
           )
           fun nullableValue(): String? {
             nullableValue()
@@ -206,7 +206,7 @@ class AutoValueKotlinExtensionTest {
           @JvmName("-collection")
           @Deprecated(
             message = "Use the property",
-            replaceWith = ReplaceWith("collection")
+            replaceWith = ReplaceWith("collection"),
           )
           fun collection(): List<String> {
             collection()
@@ -217,7 +217,7 @@ class AutoValueKotlinExtensionTest {
           @JvmName("-nullableCollection")
           @Deprecated(
             message = "Use the property",
-            replaceWith = ReplaceWith("nullableCollection")
+            replaceWith = ReplaceWith("nullableCollection"),
           )
           fun nullableCollection(): List<String>? {
             nullableCollection()
@@ -228,7 +228,7 @@ class AutoValueKotlinExtensionTest {
           @JvmName("-aBoolean")
           @Deprecated(
             message = "Use the property",
-            replaceWith = ReplaceWith("aBoolean")
+            replaceWith = ReplaceWith("aBoolean"),
           )
           fun aBoolean(): Boolean {
             aBoolean()
@@ -239,7 +239,7 @@ class AutoValueKotlinExtensionTest {
           @JvmName("-aChar")
           @Deprecated(
             message = "Use the property",
-            replaceWith = ReplaceWith("aChar")
+            replaceWith = ReplaceWith("aChar"),
           )
           fun aChar(): Char {
             aChar()
@@ -250,7 +250,7 @@ class AutoValueKotlinExtensionTest {
           @JvmName("-aByte")
           @Deprecated(
             message = "Use the property",
-            replaceWith = ReplaceWith("aByte")
+            replaceWith = ReplaceWith("aByte"),
           )
           fun aByte(): Byte {
             aByte()
@@ -261,7 +261,7 @@ class AutoValueKotlinExtensionTest {
           @JvmName("-aShort")
           @Deprecated(
             message = "Use the property",
-            replaceWith = ReplaceWith("aShort")
+            replaceWith = ReplaceWith("aShort"),
           )
           fun aShort(): Short {
             aShort()
@@ -272,7 +272,7 @@ class AutoValueKotlinExtensionTest {
           @JvmName("-aInt")
           @Deprecated(
             message = "Use the property",
-            replaceWith = ReplaceWith("aInt")
+            replaceWith = ReplaceWith("aInt"),
           )
           fun aInt(): Int {
             aInt()
@@ -283,7 +283,7 @@ class AutoValueKotlinExtensionTest {
           @JvmName("-aFloat")
           @Deprecated(
             message = "Use the property",
-            replaceWith = ReplaceWith("aFloat")
+            replaceWith = ReplaceWith("aFloat"),
           )
           fun aFloat(): Float {
             aFloat()
@@ -294,7 +294,7 @@ class AutoValueKotlinExtensionTest {
           @JvmName("-aLong")
           @Deprecated(
             message = "Use the property",
-            replaceWith = ReplaceWith("aLong")
+            replaceWith = ReplaceWith("aLong"),
           )
           fun aLong(): Long {
             aLong()
@@ -305,7 +305,7 @@ class AutoValueKotlinExtensionTest {
           @JvmName("-aDouble")
           @Deprecated(
             message = "Use the property",
-            replaceWith = ReplaceWith("aDouble")
+            replaceWith = ReplaceWith("aDouble"),
           )
           fun aDouble(): Double {
             aDouble()
@@ -316,7 +316,7 @@ class AutoValueKotlinExtensionTest {
           @JvmName("-redactedString")
           @Deprecated(
             message = "Use the property",
-            replaceWith = ReplaceWith("redactedString")
+            replaceWith = ReplaceWith("redactedString"),
           )
           fun redactedString(): String {
             redactedString()
@@ -346,7 +346,7 @@ class AutoValueKotlinExtensionTest {
             private var aFloat: Float = 0f,
             private var aLong: Long = 0L,
             private var aDouble: Double = 0.0,
-            private var redactedString: String? = null
+            private var redactedString: String? = null,
           ) {
             internal fun `value`(`value`: String): Builder = apply { this.`value` = `value` }
 
@@ -448,13 +448,13 @@ class AutoValueKotlinExtensionTest {
 
           data class Example(
             @get:JvmName("value")
-            val `value`: String
+            val `value`: String,
           ) {
             @JvmSynthetic
             @JvmName("-value")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("value")
+              replaceWith = ReplaceWith("value"),
             )
             fun `value`(): String {
               `value`()
@@ -466,7 +466,7 @@ class AutoValueKotlinExtensionTest {
               @JvmName("-create")
               @Deprecated(
                 message = "Use invoke()",
-                replaceWith = ReplaceWith("test.Example(value)")
+                replaceWith = ReplaceWith("test.Example(value)"),
               )
               internal fun create(`value`: String): Example {
                 create(value)
@@ -522,13 +522,13 @@ class AutoValueKotlinExtensionTest {
             @get:JvmName("value")
             val `value`: String,
             @get:JvmName("withValue")
-            val withValue: String
+            val withValue: String,
           ) {
             @JvmSynthetic
             @JvmName("-value")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("value")
+              replaceWith = ReplaceWith("value"),
             )
             fun `value`(): String {
               `value`()
@@ -539,7 +539,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-withValue")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("withValue")
+              replaceWith = ReplaceWith("withValue"),
             )
             fun withValue(): String {
               withValue()
@@ -680,13 +680,13 @@ class AutoValueKotlinExtensionTest {
             @get:JvmName("aNullableLongReference")
             val aNullableLongReference: Long = 0L,
             @get:JvmName("aNullableDoubleReference")
-            val aNullableDoubleReference: Double = 0.0
+            val aNullableDoubleReference: Double = 0.0,
           ) {
             @JvmSynthetic
             @JvmName("-value")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("value")
+              replaceWith = ReplaceWith("value"),
             )
             fun `value`(): String {
               `value`()
@@ -697,7 +697,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-nullableValue")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("nullableValue")
+              replaceWith = ReplaceWith("nullableValue"),
             )
             fun nullableValue(): String? {
               nullableValue()
@@ -708,7 +708,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-collection")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("collection")
+              replaceWith = ReplaceWith("collection"),
             )
             fun collection(): List<String> {
               collection()
@@ -719,7 +719,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-nullableCollection")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("nullableCollection")
+              replaceWith = ReplaceWith("nullableCollection"),
             )
             fun nullableCollection(): List<String>? {
               nullableCollection()
@@ -730,7 +730,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aBoolean")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aBoolean")
+              replaceWith = ReplaceWith("aBoolean"),
             )
             fun aBoolean(): Boolean {
               aBoolean()
@@ -741,7 +741,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aChar")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aChar")
+              replaceWith = ReplaceWith("aChar"),
             )
             fun aChar(): Char {
               aChar()
@@ -752,7 +752,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aByte")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aByte")
+              replaceWith = ReplaceWith("aByte"),
             )
             fun aByte(): Byte {
               aByte()
@@ -763,7 +763,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aShort")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aShort")
+              replaceWith = ReplaceWith("aShort"),
             )
             fun aShort(): Short {
               aShort()
@@ -774,7 +774,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aInt")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aInt")
+              replaceWith = ReplaceWith("aInt"),
             )
             fun aInt(): Int {
               aInt()
@@ -785,7 +785,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aFloat")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aFloat")
+              replaceWith = ReplaceWith("aFloat"),
             )
             fun aFloat(): Float {
               aFloat()
@@ -796,7 +796,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aLong")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aLong")
+              replaceWith = ReplaceWith("aLong"),
             )
             fun aLong(): Long {
               aLong()
@@ -807,7 +807,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aDouble")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aDouble")
+              replaceWith = ReplaceWith("aDouble"),
             )
             fun aDouble(): Double {
               aDouble()
@@ -818,7 +818,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aBooleanReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aBooleanReference")
+              replaceWith = ReplaceWith("aBooleanReference"),
             )
             fun aBooleanReference(): Boolean {
               aBooleanReference()
@@ -829,7 +829,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aCharReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aCharReference")
+              replaceWith = ReplaceWith("aCharReference"),
             )
             fun aCharReference(): Char {
               aCharReference()
@@ -840,7 +840,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aByteReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aByteReference")
+              replaceWith = ReplaceWith("aByteReference"),
             )
             fun aByteReference(): Byte {
               aByteReference()
@@ -851,7 +851,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aShortReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aShortReference")
+              replaceWith = ReplaceWith("aShortReference"),
             )
             fun aShortReference(): Short {
               aShortReference()
@@ -862,7 +862,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aIntReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aIntReference")
+              replaceWith = ReplaceWith("aIntReference"),
             )
             fun aIntReference(): Int {
               aIntReference()
@@ -873,7 +873,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aFloatReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aFloatReference")
+              replaceWith = ReplaceWith("aFloatReference"),
             )
             fun aFloatReference(): Float {
               aFloatReference()
@@ -884,7 +884,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aLongReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aLongReference")
+              replaceWith = ReplaceWith("aLongReference"),
             )
             fun aLongReference(): Long {
               aLongReference()
@@ -895,7 +895,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aDoubleReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aDoubleReference")
+              replaceWith = ReplaceWith("aDoubleReference"),
             )
             fun aDoubleReference(): Double {
               aDoubleReference()
@@ -906,7 +906,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aNullableBooleanReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aNullableBooleanReference")
+              replaceWith = ReplaceWith("aNullableBooleanReference"),
             )
             fun aNullableBooleanReference(): Boolean {
               aNullableBooleanReference()
@@ -917,7 +917,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aNullableCharReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aNullableCharReference")
+              replaceWith = ReplaceWith("aNullableCharReference"),
             )
             fun aNullableCharReference(): Char {
               aNullableCharReference()
@@ -928,7 +928,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aNullableByteReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aNullableByteReference")
+              replaceWith = ReplaceWith("aNullableByteReference"),
             )
             fun aNullableByteReference(): Byte {
               aNullableByteReference()
@@ -939,7 +939,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aNullableShortReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aNullableShortReference")
+              replaceWith = ReplaceWith("aNullableShortReference"),
             )
             fun aNullableShortReference(): Short {
               aNullableShortReference()
@@ -950,7 +950,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aNullableIntReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aNullableIntReference")
+              replaceWith = ReplaceWith("aNullableIntReference"),
             )
             fun aNullableIntReference(): Int {
               aNullableIntReference()
@@ -961,7 +961,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aNullableFloatReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aNullableFloatReference")
+              replaceWith = ReplaceWith("aNullableFloatReference"),
             )
             fun aNullableFloatReference(): Float {
               aNullableFloatReference()
@@ -972,7 +972,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aNullableLongReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aNullableLongReference")
+              replaceWith = ReplaceWith("aNullableLongReference"),
             )
             fun aNullableLongReference(): Long {
               aNullableLongReference()
@@ -983,7 +983,7 @@ class AutoValueKotlinExtensionTest {
             @JvmName("-aNullableDoubleReference")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("aNullableDoubleReference")
+              replaceWith = ReplaceWith("aNullableDoubleReference"),
             )
             fun aNullableDoubleReference(): Double {
               aNullableDoubleReference()
@@ -1038,13 +1038,13 @@ class AutoValueKotlinExtensionTest {
 
           data class Outer(
             @get:JvmName("outerValue")
-            val outerValue: String
+            val outerValue: String,
           ) {
             @JvmSynthetic
             @JvmName("-outerValue")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("outerValue")
+              replaceWith = ReplaceWith("outerValue"),
             )
             fun outerValue(): String {
               outerValue()
@@ -1055,13 +1055,13 @@ class AutoValueKotlinExtensionTest {
               @get:JvmName("value")
               val `value`: String,
               @get:JvmName("withValue")
-              val withValue: String
+              val withValue: String,
             ) {
               @JvmSynthetic
               @JvmName("-value")
               @Deprecated(
                 message = "Use the property",
-                replaceWith = ReplaceWith("value")
+                replaceWith = ReplaceWith("value"),
               )
               fun `value`(): String {
                 `value`()
@@ -1072,7 +1072,7 @@ class AutoValueKotlinExtensionTest {
               @JvmName("-withValue")
               @Deprecated(
                 message = "Use the property",
-                replaceWith = ReplaceWith("withValue")
+                replaceWith = ReplaceWith("withValue"),
               )
               fun withValue(): String {
                 withValue()
@@ -1257,7 +1257,7 @@ class AutoValueKotlinExtensionTest {
           package test
 
           data class Example(
-            val `value`: String
+            val `value`: String,
           )
 
         """
@@ -1307,13 +1307,13 @@ class AutoValueKotlinExtensionTest {
 
           data class Example internal constructor(
             @get:JvmName("name")
-            val name: String?
+            val name: String?,
           ) {
             @JvmSynthetic
             @JvmName("-name")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("name")
+              replaceWith = ReplaceWith("name"),
             )
             fun name(): String? {
               name()
@@ -1321,7 +1321,7 @@ class AutoValueKotlinExtensionTest {
             }
 
             internal class Builder internal constructor(
-              private var name: String? = null
+              private var name: String? = null,
             ) {
               internal fun name(name: String?): Builder = apply { this.name = name }
 
@@ -1380,13 +1380,13 @@ class AutoValueKotlinExtensionTest {
           @JsonClass(generateAdapter = true)
           data class Example internal constructor(
             @get:JvmName("name")
-            val name: String? = null
+            val name: String? = null,
           ) {
             @JvmSynthetic
             @JvmName("-name")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("name")
+              replaceWith = ReplaceWith("name"),
             )
             fun name(): String? {
               name()
@@ -1394,7 +1394,7 @@ class AutoValueKotlinExtensionTest {
             }
 
             internal class Builder internal constructor(
-              private var name: String? = null
+              private var name: String? = null,
             ) {
               internal fun name(name: String?): Builder = apply { this.name = name }
 
@@ -1445,13 +1445,13 @@ class AutoValueKotlinExtensionTest {
           data class Example(
             val getValue: String,
             @get:JvmName("nonGetValue")
-            val nonGetValue: String
+            val nonGetValue: String,
           ) {
             @JvmSynthetic
             @JvmName("-nonGetValue")
             @Deprecated(
               message = "Use the property",
-              replaceWith = ReplaceWith("nonGetValue")
+              replaceWith = ReplaceWith("nonGetValue"),
             )
             fun nonGetValue(): String {
               nonGetValue()
