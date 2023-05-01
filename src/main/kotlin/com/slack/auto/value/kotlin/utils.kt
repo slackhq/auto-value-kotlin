@@ -162,7 +162,7 @@ public fun TypeName.defaultPrimitiveValue(): CodeBlock =
     UNIT,
     Void::class.asTypeName(),
     NOTHING -> {
-      throw IllegalStateException("Parameter with void, Unit, or Nothing type is illegal")
+      error("Parameter with void, Unit, or Nothing type is illegal")
     }
     else -> CodeBlock.of("null")
   }
