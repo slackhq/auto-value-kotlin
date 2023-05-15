@@ -101,7 +101,7 @@ tasks.withType<Test>().configureEach {
   )
 }
 
-val moshiVersion = "1.14.0"
+val moshiVersion = "1.15.0"
 
 dependencies {
   ksp("dev.zacsweers.autoservice:auto-service-ksp:1.0.0")
