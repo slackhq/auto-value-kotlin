@@ -106,7 +106,7 @@ val moshiVersion = "1.15.0"
 dependencies {
   ksp("dev.zacsweers.autoservice:auto-service-ksp:1.0.0")
   implementation("com.squareup.moshi:moshi:$moshiVersion")
-  implementation("com.google.auto.service:auto-service:1.0.1")
+  implementation("com.google.auto.service:auto-service:1.1.0")
   implementation("com.squareup:kotlinpoet:1.13.2")
   implementation("com.squareup.okio:okio:3.3.0")
   implementation("com.google.auto.value:auto-value:1.10.1")
