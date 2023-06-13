@@ -112,7 +112,7 @@ dependencies {
   implementation("com.google.auto.value:auto-value:1.10.1")
   implementation("com.google.auto.value:auto-value-annotations:1.10.1")
   testImplementation("junit:junit:4.13.2")
-  testImplementation("com.google.truth:truth:1.1.3")
+  testImplementation("com.google.truth:truth:1.1.4")
   testImplementation("org.jetbrains.kotlin:kotlin-test:1.8.21")
   testImplementation("com.google.testing.compile:compile-testing:0.21.0")
   testImplementation("com.ryanharter.auto.value:auto-value-moshi-extension:1.1.0")
