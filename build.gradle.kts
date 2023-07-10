@@ -108,7 +108,7 @@ dependencies {
   implementation("com.squareup.moshi:moshi:$moshiVersion")
   implementation("com.google.auto.service:auto-service:1.1.1")
   implementation("com.squareup:kotlinpoet:1.13.2")
-  implementation("com.squareup.okio:okio:3.3.0")
+  implementation("com.squareup.okio:okio:3.4.0")
   implementation("com.google.auto.value:auto-value:1.10.2")
   implementation("com.google.auto.value:auto-value-annotations:1.10.2")
   testImplementation("junit:junit:4.13.2")
