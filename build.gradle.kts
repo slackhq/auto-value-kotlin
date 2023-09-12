@@ -109,7 +109,7 @@ dependencies {
   implementation("com.google.auto.service:auto-service:1.1.1")
   implementation("com.squareup:kotlinpoet:1.13.2")
   implementation("com.squareup.okio:okio:3.5.0")
-  implementation("com.google.auto.value:auto-value:1.10.2")
+  implementation("com.google.auto.value:auto-value:1.10.4")
   implementation("com.google.auto.value:auto-value-annotations:1.10.4")
   testImplementation("junit:junit:4.13.2")
   testImplementation("com.google.truth:truth:1.1.5")
