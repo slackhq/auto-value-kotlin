@@ -26,7 +26,7 @@ plugins {
   id("com.google.devtools.ksp") version "1.9.10-1.0.13"
   id("com.diffplug.spotless") version "6.19.0"
   id("com.vanniktech.maven.publish") version "0.25.3"
-  id("io.gitlab.arturbosch.detekt") version "1.23.1"
+  id("io.gitlab.arturbosch.detekt") version "1.23.3"
 }
 
 repositories { mavenCentral() }
