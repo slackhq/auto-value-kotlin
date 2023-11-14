@@ -21,12 +21,12 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "1.8.22"
-  id("org.jetbrains.dokka") version "1.8.20"
-  id("com.google.devtools.ksp") version "1.8.22-1.0.11"
+  kotlin("jvm") version "1.9.20"
+  id("org.jetbrains.dokka") version "1.9.0"
+  id("com.google.devtools.ksp") version "1.9.20-1.0.14"
   id("com.diffplug.spotless") version "6.19.0"
-  id("com.vanniktech.maven.publish") version "0.25.2"
-  id("io.gitlab.arturbosch.detekt") version "1.23.0"
+  id("com.vanniktech.maven.publish") version "0.25.3"
+  id("io.gitlab.arturbosch.detekt") version "1.23.3"
 }
 
 repositories { mavenCentral() }
@@ -104,16 +104,16 @@ tasks.withType<Test>().configureEach {
 val moshiVersion = "1.15.0"
 
 dependencies {
-  ksp("dev.zacsweers.autoservice:auto-service-ksp:1.0.0")
+  ksp("dev.zacsweers.autoservice:auto-service-ksp:1.1.0")
   implementation("com.squareup.moshi:moshi:$moshiVersion")
   implementation("com.google.auto.service:auto-service:1.1.1")
   implementation("com.squareup:kotlinpoet:1.14.2")
-  implementation("com.squareup.okio:okio:3.3.0")
-  implementation("com.google.auto.value:auto-value:1.10.1")
-  implementation("com.google.auto.value:auto-value-annotations:1.10.1")
+  implementation("com.squareup.okio:okio:3.6.0")
+  implementation("com.google.auto.value:auto-value:1.10.2")
+  implementation("com.google.auto.value:auto-value-annotations:1.10.4")
   testImplementation("junit:junit:4.13.2")
   testImplementation("com.google.truth:truth:1.1.5")
-  testImplementation("org.jetbrains.kotlin:kotlin-test:1.8.21")
+  testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.10")
   testImplementation("com.google.testing.compile:compile-testing:0.21.0")
   testImplementation("com.ryanharter.auto.value:auto-value-moshi-extension:1.1.0")
   testImplementation("com.ryanharter.auto.value:auto-value-parcel:0.2.9")
