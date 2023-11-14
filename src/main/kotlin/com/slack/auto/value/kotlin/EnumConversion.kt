@@ -71,7 +71,7 @@ public object EnumConversion {
             }
           }
 
-          if (isMoshiSerialized && annotationSpecs.none { it.typeName == JSON_CLASS_CN }) {
+          if (isMoshiSerialized && annotations.none { it.typeName == JSON_CLASS_CN }) {
             addAnnotation(
               AnnotationSpec.builder(JSON_CLASS_CN).addMember("generateAdapter = false").build()
             )

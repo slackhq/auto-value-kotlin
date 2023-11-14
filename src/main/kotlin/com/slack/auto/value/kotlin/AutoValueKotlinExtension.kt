@@ -144,7 +144,7 @@ public class AutoValueKotlinExtension(
       // If the AV class is Moshi-serializable, treat the enum as such too
       val addJsonClass =
         isAnnotationPresent(avClass, JsonClass::class.java) &&
-          spec.annotationSpecs.none { it.typeName == JSON_CLASS_CN }
+          spec.annotations.none { it.typeName == JSON_CLASS_CN }
       collectedEnumsLocal[cn] =
         if (addJsonClass) {
           spec
