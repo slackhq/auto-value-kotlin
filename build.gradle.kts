@@ -21,12 +21,12 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "1.9.10"
+  kotlin("jvm") version "1.9.20"
   id("org.jetbrains.dokka") version "1.9.0"
-  id("com.google.devtools.ksp") version "1.9.10-1.0.13"
+  id("com.google.devtools.ksp") version "1.9.20-1.0.14"
   id("com.diffplug.spotless") version "6.22.0"
   id("com.vanniktech.maven.publish") version "0.25.3"
-  id("io.gitlab.arturbosch.detekt") version "1.23.1"
+  id("io.gitlab.arturbosch.detekt") version "1.23.3"
 }
 
 repositories { mavenCentral() }
@@ -108,7 +108,7 @@ dependencies {
   implementation("com.squareup.moshi:moshi:$moshiVersion")
   implementation("com.google.auto.service:auto-service:1.1.1")
   implementation("com.squareup:kotlinpoet:1.13.2")
-  implementation("com.squareup.okio:okio:3.5.0")
+  implementation("com.squareup.okio:okio:3.6.0")
   implementation("com.google.auto.value:auto-value:1.10.2")
   implementation("com.google.auto.value:auto-value-annotations:1.10.4")
   testImplementation("junit:junit:4.13.2")
