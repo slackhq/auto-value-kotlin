@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 import com.diffplug.spotless.LineEnding
+import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import io.gitlab.arturbosch.detekt.Detekt
 import java.net.URI
 import org.jetbrains.dokka.gradle.DokkaTask
@@ -35,6 +36,11 @@ pluginManager.withPlugin("java") {
   configure<JavaPluginExtension> { toolchain { languageVersion.set(JavaLanguageVersion.of(17)) } }
 
   project.tasks.withType<JavaCompile>().configureEach { options.release.set(8) }
+}
+
+mavenPublishing {
+  publishToMavenCentral(automaticRelease = true)
+  signAllPublications()
 }
 
 tasks.withType<KotlinCompile>().configureEach {
