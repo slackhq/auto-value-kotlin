@@ -28,6 +28,7 @@ import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.joinToCode
 import javax.annotation.processing.Messager
+import javax.lang.model.element.ExecutableElement
 import javax.tools.Diagnostic.Kind.WARNING
 
 @ExperimentalAvkApi
@@ -58,7 +59,8 @@ public data class AvkBuilder(
 
     val propsToCreateWith = mutableListOf<CodeBlock>()
 
-    for ((propName, type, setters) in builderProps) {
+    for (builderProp in builderProps) {
+      val (propName, type, setters, propertyBuilder) = builderProp
       // Add param to constructor
       val defaultValue =
         if (type.isNullable) {
@@ -81,6 +83,29 @@ public data class AvkBuilder(
           .initializer("%N", param.name)
           .build()
       builder.addProperty(propSpec)
+
+      if (propertyBuilder != null) {
+        val builderPropSpec = PropertySpec.builder(builderProp.builderPropName, propertyBuilder.returnType)
+                  .addModifiers(PRIVATE)
+                  .mutable()
+                  .initializer("null")
+                  .build()
+        builder.addProperty(builderPropSpec)
+
+        // Fill in the builder body
+        // Example:
+        //   if (reactionsBuilder$ == null) {
+        //     reactionsBuilder$ = ImmutableList.builder();
+        //   }
+        //   return reactionsBuilder$;
+        val funSpec = propertyBuilder.toBuilder()
+                .beginControlFlow("if (%N == null)", builderProp)
+                .addStatement("%N = %T.builder()", builderProp, propSpec.type)
+                .endControlFlow()
+                .addStatement("return %N", builderProp)
+                .build()
+        builder.addFunction(funSpec)
+      }
 
       // Add build() assignment block
       val extraCheck =
@@ -113,9 +138,29 @@ public data class AvkBuilder(
     builder.addFunction(
       autoBuildFun
         .toBuilder()
+        .apply {
+          // For all builder types, we need to init or assign them first
+          // Example:
+          //   if (reactionsBuilder$ != null) {
+          //     this.reactions = reactionsBuilder$.build();
+          //   } else if (this.reactions == null) {
+          //     this.reactions = ImmutableList.of();
+          //   }
+          for (builderProp in builderProps) {
+            if (builderProp.builder != null) {
+              beginControlFlow("if (%N != null)", builderProp.builderPropName)
+              addStatement("this.%N = %N.build()", builderProp.name, builderProp.builderPropName)
+              if (!builderProp.type.isNullable) {
+                nextControlFlow("else if (this.%N == null)", builderProp.name)
+                addStatement("this.%N = %T.of()", builderProp.name, builderProp.type)
+              }
+              endControlFlow()
+            }
+          }
+        }
         .addStatement(
           "return·%T(%L)",
-          autoBuildFun.returnType!!,
+          autoBuildFun.returnType,
           propsToCreateWith.joinToCode(",·")
         )
         .build()
@@ -145,8 +190,11 @@ public data class AvkBuilder(
   public data class BuilderProperty(
     val name: String,
     val type: TypeName,
-    val setters: Set<FunSpec>
-  )
+    val setters: Set<FunSpec>,
+    val builder: FunSpec?,
+  ) {
+    val builderPropName: String = "${name}Builder"
+  }
 
   // Public for extension
   public companion object
