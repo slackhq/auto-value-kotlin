@@ -368,7 +368,7 @@ class AutoValueKotlinExtensionTest {
             private var aDouble: Double = 0.0,
             private var redactedString: String? = null,
           ) {
-            private var requiredBuildableCollectionBuilder: ImmutableList.Builder<String> = null
+            private var requiredBuildableCollectionBuilder: ImmutableList.Builder<String>? = null
 
             internal fun `value`(`value`: String): Builder = apply { this.`value` = `value` }
 
