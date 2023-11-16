@@ -383,11 +383,11 @@ class AutoValueKotlinExtensionTest {
               if (requiredBuildableCollectionBuilder == null) {
                 requiredBuildableCollectionBuilder = ImmutableList.builder()
                 if (requiredBuildableCollection != null) {
-                  requiredBuildableCollectionBuilder.addAll(requiredBuildableCollection)
+                  requiredBuildableCollectionBuilder!!.addAll(requiredBuildableCollection)
                   requiredBuildableCollection = null
                 }
               }
-              return requiredBuildableCollectionBuilder
+              return requiredBuildableCollectionBuilder!!
             }
 
             internal fun requiredBuildableCollection(`value`: ImmutableList<String>): Builder {

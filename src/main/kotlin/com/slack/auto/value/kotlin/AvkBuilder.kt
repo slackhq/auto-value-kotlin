@@ -133,13 +133,13 @@ public data class AvkBuilder(
                   } else {
                     "addAll"
                   }
-                addStatement("%N.$addMethod(%N)", builderPropSpec, propSpec)
+                addStatement("%N!!.$addMethod(%N)", builderPropSpec, propSpec)
                 addStatement("%N = null", propSpec)
                 endControlFlow()
               }
             }
             .endControlFlow()
-            .addStatement("return·%N", builderPropSpec)
+            .addStatement("return·%N!!", builderPropSpec)
             .build()
         builder.addFunction(funSpec)
       }
