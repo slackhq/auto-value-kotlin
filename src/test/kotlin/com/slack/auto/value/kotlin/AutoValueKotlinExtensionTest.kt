@@ -418,7 +418,7 @@ class AutoValueKotlinExtensionTest {
 
             internal fun build(): Example {
               if (requiredBuildableCollectionBuilder != null) {
-                this.requiredBuildableCollection = requiredBuildableCollectionBuilder.build()
+                this.requiredBuildableCollection = requiredBuildableCollectionBuilder!!.build()
               } else if (this.requiredBuildableCollection == null) {
                 this.requiredBuildableCollection = ImmutableList.of()
               }

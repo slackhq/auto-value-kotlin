@@ -206,7 +206,7 @@ public data class AvkBuilder(
           for (builderProp in builderProps) {
             if (builderProp.builder != null) {
               beginControlFlow("if (%N != null)", builderProp.builderPropName)
-              addStatement("this.%N = %N.build()", builderProp.name, builderProp.builderPropName)
+              addStatement("this.%N = %N!!.build()", builderProp.name, builderProp.builderPropName)
               // property builders can never be nullable
               nextControlFlow("else if (this.%N == null)", builderProp.name)
               val rawType =
