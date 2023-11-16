@@ -15,7 +15,7 @@
  */
 import com.diffplug.spotless.LineEnding
 import io.gitlab.arturbosch.detekt.Detekt
-import java.net.URL
+import java.net.URI
 import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -55,7 +55,7 @@ tasks.named<DokkaTask>("dokkaHtml") {
   outputDirectory.set(rootDir.resolve("docs/0.x"))
   dokkaSourceSets.configureEach {
     skipDeprecated.set(true)
-    externalDocumentationLink { url.set(URL("https://square.github.io/moshi/1.x/moshi/")) }
+    externalDocumentationLink { url.set(URI("https://square.github.io/moshi/1.x/moshi/").toURL()) }
   }
 }
 
@@ -66,7 +66,7 @@ spotless {
     trimTrailingWhitespace()
     endWithNewline()
   }
-  val ktfmtVersion = "0.43"
+  val ktfmtVersion = "0.46"
   kotlin {
     target("**/*.kt")
     ktfmt(ktfmtVersion).googleStyle()

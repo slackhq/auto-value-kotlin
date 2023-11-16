@@ -399,8 +399,7 @@ public class AutoValueKotlinExtension(
                   // Best-effort. We could be more precise with this, but it's noisy and annoying
                   initializer("%L", it)
                 }
-              }
-                ?: run { initializer("TODO()") }
+              } ?: run { initializer("TODO()") }
 
               field.parseDocs(elements)?.let { addKdoc(it) }
             }

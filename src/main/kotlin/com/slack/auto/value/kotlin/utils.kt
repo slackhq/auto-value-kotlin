@@ -286,8 +286,7 @@ public fun FunSpec.Builder.withDocsFrom(
 public fun ProcessingEnvironment.isParcelable(element: TypeElement): Boolean {
   return elementUtils.getTypeElement("android.os.Parcelable")?.asType()?.let { parcelableClass ->
     element.interfaces.any { it.isClassOfType(typeUtils, parcelableClass) }
-  }
-    ?: false
+  } ?: false
 }
 
 private fun TypeMirror.isClassOfType(types: Types, other: TypeMirror?) =
