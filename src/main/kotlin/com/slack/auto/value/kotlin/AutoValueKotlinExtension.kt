@@ -448,14 +448,24 @@ private fun AvkBuilder.Companion.from(
   propertyTypes: Map<String, TypeName>,
   parseDocs: Element.() -> String?
 ): AvkBuilder {
+
+  // Merge the set of all properties with setters and builders
+  val allProperties = builderContext.setters().keys + builderContext.propertyBuilders().keys
+
   // Setters
   val props =
-    builderContext.setters().entries.map { (prop, setters) ->
+    allProperties.map { prop ->
+      val setters = builderContext.setters()[prop] ?: emptyList()
+      val propertyBuilder =
+        builderContext.propertyBuilders()[prop]?.let { propertyBuilder ->
+          FunSpec.copyOf(propertyBuilder).withDocsFrom(propertyBuilder, parseDocs).build()
+        }
       val type = propertyTypes.getValue(prop)
       BuilderProperty(
         prop,
         type,
-        setters.mapTo(LinkedHashSet()) { FunSpec.copyOf(it).withDocsFrom(it, parseDocs).build() }
+        setters.mapTo(LinkedHashSet()) { FunSpec.copyOf(it).withDocsFrom(it, parseDocs).build() },
+        propertyBuilder
       )
     }
 
@@ -466,11 +476,12 @@ private fun AvkBuilder.Companion.from(
     builderMethods += builderContext.buildMethod().get()
   }
 
-  // TODO propertyBuilders
+  val propertyBuilders = builderContext.propertyBuilders().values.toSet()
 
   val remainingMethods =
     ElementFilter.methodsIn(builderContext.builderType().enclosedElements)
       .asSequence()
+      .filterNot { it in propertyBuilders }
       .filterNot { it in builderMethods }
       .filterNot { it == builderContext.autoBuildMethod() }
       .map { "${it.modifiers.joinToString(" ")} ${it.returnType} ${it.simpleName}(...)" }

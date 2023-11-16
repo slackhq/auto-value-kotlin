@@ -23,6 +23,7 @@ import com.squareup.kotlinpoet.KModifier.INTERNAL
 import com.squareup.kotlinpoet.KModifier.PRIVATE
 import com.squareup.kotlinpoet.NOTHING
 import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
@@ -42,7 +43,7 @@ public data class AvkBuilder(
   val classAnnotations: List<AnnotationSpec>
 ) {
 
-  @Suppress("LongMethod")
+  @Suppress("LongMethod", "CyclomaticComplexMethod", "NestedBlockDepth")
   public fun createType(messager: Messager): TypeSpec {
     val builder =
       TypeSpec.classBuilder(name).addModifiers(visibility).addAnnotations(classAnnotations)
@@ -58,7 +59,9 @@ public data class AvkBuilder(
 
     val propsToCreateWith = mutableListOf<CodeBlock>()
 
-    for ((propName, type, setters) in builderProps) {
+    @Suppress("DestructuringDeclarationWithTooManyEntries")
+    for (builderProp in builderProps) {
+      val (propName, type, setters, propertyBuilder) = builderProp
       // Add param to constructor
       val defaultValue =
         if (type.isNullable) {
@@ -82,6 +85,65 @@ public data class AvkBuilder(
           .build()
       builder.addProperty(propSpec)
 
+      if (propertyBuilder != null) {
+        val builderPropSpec =
+          PropertySpec.builder(
+              builderProp.builderPropName,
+              propertyBuilder.returnType.copy(nullable = true)
+            )
+            .addModifiers(PRIVATE)
+            .mutable()
+            .initializer("null")
+            .build()
+        builder.addProperty(builderPropSpec)
+
+        // Fill in the builder body
+        // Example:
+        //   if (reactionsBuilder$ == null) {
+        //     reactionsBuilder$ = ImmutableList.builder();
+        //   }
+        //   return reactionsBuilder$;
+        val rawType =
+          if (propSpec.type is ParameterizedTypeName) {
+            (propSpec.type as ParameterizedTypeName).rawType
+          } else {
+            propSpec.type
+          }
+        val nonNullType = rawType.copy(nullable = false)
+        val funSpec =
+          propertyBuilder
+            .toBuilder()
+            .beginControlFlow("if (%N == null)", builderPropSpec)
+            .apply {
+              addStatement("%N·= %T.builder()", builderPropSpec, nonNullType)
+              if (setters.isNotEmpty()) {
+                // Add the previous set value if one is present
+                // if (files == null) {
+                //  filesBuilder$ = ImmutableList.builder();
+                // } else {
+                //  filesBuilder$ = ImmutableList.builder();
+                //  filesBuilder$.addAll(files);
+                //  files = null;
+                // }
+                beginControlFlow("if (%N != null)", propSpec)
+                // TODO hacky but works for our cases
+                val addMethod =
+                  if (type.toString().contains("Map")) {
+                    "putAll"
+                  } else {
+                    "addAll"
+                  }
+                addStatement("%N!!.$addMethod(%N)", builderPropSpec, propSpec)
+                addStatement("%N = null", propSpec)
+                endControlFlow()
+              }
+            }
+            .endControlFlow()
+            .addStatement("return·%N!!", builderPropSpec)
+            .build()
+        builder.addFunction(funSpec)
+      }
+
       // Add build() assignment block
       val extraCheck =
         if (type.isNullable || !useNullablePropType) {
@@ -92,14 +154,34 @@ public data class AvkBuilder(
       propsToCreateWith += CodeBlock.of("%1N·=·%1N%2L", propSpec, extraCheck)
 
       for (setter in setters) {
+        // TODO if there's a builder, check the builder is null first
         if (setter.parameters.size != 1) {
           messager.printMessage(WARNING, "Setter with surprising params: ${setter.name}")
         }
+        val setterBlock = CodeBlock.of("this.%N·= %N", propSpec, setter.parameters[0])
         val setterSpec =
           setter
             .toBuilder()
-            // Assume this is a normal setter
-            .addStatement("return·apply·{·this.%N·= %N }", propSpec, setter.parameters[0])
+            .apply {
+              if (propertyBuilder != null) {
+                // Need to check if the builder is null
+                // if (reactionsBuilder$ != null) {
+                //   throw new IllegalStateException("Cannot set reactions after calling
+                // reactionsBuilder()");
+                // }
+                beginControlFlow("check(%N == null)", builderProp.builderPropName)
+                addStatement(
+                  "%S",
+                  "Cannot set ${propSpec.name} after calling ${builderProp.builderPropName}()"
+                )
+                endControlFlow()
+                addStatement("%L", setterBlock)
+                addStatement("return·this")
+              } else {
+                // Assume this is a normal setter
+                addStatement("return·apply·{·%L }", setterBlock)
+              }
+            }
             .build()
         builder.addFunction(setterSpec)
       }
@@ -113,11 +195,32 @@ public data class AvkBuilder(
     builder.addFunction(
       autoBuildFun
         .toBuilder()
-        .addStatement(
-          "return·%T(%L)",
-          autoBuildFun.returnType!!,
-          propsToCreateWith.joinToCode(",·")
-        )
+        .apply {
+          // For all builder types, we need to init or assign them first
+          // Example:
+          //   if (reactionsBuilder$ != null) {
+          //     this.reactions = reactionsBuilder$.build();
+          //   } else if (this.reactions == null) {
+          //     this.reactions = ImmutableList.of();
+          //   }
+          for (builderProp in builderProps) {
+            if (builderProp.builder != null) {
+              beginControlFlow("if (%N != null)", builderProp.builderPropName)
+              addStatement("this.%N = %N!!.build()", builderProp.name, builderProp.builderPropName)
+              // property builders can never be nullable
+              nextControlFlow("else if (this.%N == null)", builderProp.name)
+              val rawType =
+                if (builderProp.type is ParameterizedTypeName) {
+                  builderProp.type.rawType
+                } else {
+                  builderProp.type
+                }
+              addStatement("this.%N = %T.of()", builderProp.name, rawType)
+              endControlFlow()
+            }
+          }
+        }
+        .addStatement("return·%T(%L)", autoBuildFun.returnType, propsToCreateWith.joinToCode(",·"))
         .build()
     )
 
@@ -145,8 +248,11 @@ public data class AvkBuilder(
   public data class BuilderProperty(
     val name: String,
     val type: TypeName,
-    val setters: Set<FunSpec>
-  )
+    val setters: Set<FunSpec>,
+    val builder: FunSpec?,
+  ) {
+    val builderPropName: String = "${name}Builder"
+  }
 
   // Public for extension
   public companion object

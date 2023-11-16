@@ -57,6 +57,7 @@ class AutoValueKotlinExtensionTest {
           import com.squareup.moshi.Json;
           import com.squareup.moshi.JsonClass;
           import java.util.List;
+          import com.google.common.collect.ImmutableList;
           import org.jetbrains.annotations.Nullable;
 
           @JsonClass(generateAdapter = true, generator = "avm")
@@ -75,6 +76,8 @@ class AutoValueKotlinExtensionTest {
 
             @Nullable
             abstract List<String> nullableCollection();
+
+            abstract ImmutableList<String> requiredBuildableCollection();
 
             abstract boolean aBoolean();
             abstract char aChar();
@@ -110,6 +113,8 @@ class AutoValueKotlinExtensionTest {
               abstract Builder nullableValue(@Nullable String value);
               abstract Builder collection(List<String> value);
               abstract Builder nullableCollection(@Nullable List<String> value);
+              abstract Builder requiredBuildableCollection(ImmutableList<String> value);
+              abstract ImmutableList.Builder<String> requiredBuildableCollectionBuilder();
               abstract Builder aBoolean(boolean value);
               abstract Builder aChar(char value);
               abstract Builder aByte(byte value);
@@ -140,6 +145,7 @@ class AutoValueKotlinExtensionTest {
         package test
 
         import android.os.Parcelable
+        import com.google.common.collect.ImmutableList
         import com.slack.auto.`value`.kotlin.Redacted
         import com.squareup.moshi.Json
         import com.squareup.moshi.JsonClass
@@ -160,6 +166,8 @@ class AutoValueKotlinExtensionTest {
           val collection: List<String>,
           @get:JvmName("nullableCollection")
           val nullableCollection: List<String>? = null,
+          @get:JvmName("requiredBuildableCollection")
+          val requiredBuildableCollection: ImmutableList<String>,
           @get:JvmName("aBoolean")
           val aBoolean: Boolean = false,
           @get:JvmName("aChar")
@@ -221,6 +229,17 @@ class AutoValueKotlinExtensionTest {
           )
           fun nullableCollection(): List<String>? {
             nullableCollection()
+            TODO("Remove this function. Use the above line to auto-migrate.")
+          }
+
+          @JvmSynthetic
+          @JvmName("-requiredBuildableCollection")
+          @Deprecated(
+            message = "Use the property",
+            replaceWith = ReplaceWith("requiredBuildableCollection"),
+          )
+          fun requiredBuildableCollection(): ImmutableList<String> {
+            requiredBuildableCollection()
             TODO("Remove this function. Use the above line to auto-migrate.")
           }
 
@@ -330,7 +349,7 @@ class AutoValueKotlinExtensionTest {
           }
 
           internal fun toBuilder(): Builder =
-              Builder(value = value, nullableValue = nullableValue, collection = collection, nullableCollection = nullableCollection, aBoolean = aBoolean, aChar = aChar, aByte = aByte, aShort = aShort, aInt = aInt, aFloat = aFloat, aLong = aLong, aDouble = aDouble, redactedString = redactedString)
+              Builder(value = value, nullableValue = nullableValue, collection = collection, nullableCollection = nullableCollection, requiredBuildableCollection = requiredBuildableCollection, aBoolean = aBoolean, aChar = aChar, aByte = aByte, aShort = aShort, aInt = aInt, aFloat = aFloat, aLong = aLong, aDouble = aDouble, redactedString = redactedString)
 
           @Suppress("LongParameterList")
           internal class Builder internal constructor(
@@ -338,6 +357,7 @@ class AutoValueKotlinExtensionTest {
             private var nullableValue: String? = null,
             private var collection: List<String>? = null,
             private var nullableCollection: List<String>? = null,
+            private var requiredBuildableCollection: ImmutableList<String>? = null,
             private var aBoolean: Boolean = false,
             private var aChar: Char = 0.toChar(),
             private var aByte: Byte = 0.toByte(),
@@ -348,6 +368,8 @@ class AutoValueKotlinExtensionTest {
             private var aDouble: Double = 0.0,
             private var redactedString: String? = null,
           ) {
+            private var requiredBuildableCollectionBuilder: ImmutableList.Builder<String>? = null
+
             internal fun `value`(`value`: String): Builder = apply { this.`value` = `value` }
 
             internal fun nullableValue(`value`: String?): Builder = apply { this.nullableValue = `value` }
@@ -356,6 +378,25 @@ class AutoValueKotlinExtensionTest {
 
             internal fun nullableCollection(`value`: List<String>?): Builder =
                 apply { this.nullableCollection = `value` }
+
+            internal fun requiredBuildableCollectionBuilder(): ImmutableList.Builder<String> {
+              if (requiredBuildableCollectionBuilder == null) {
+                requiredBuildableCollectionBuilder = ImmutableList.builder()
+                if (requiredBuildableCollection != null) {
+                  requiredBuildableCollectionBuilder!!.addAll(requiredBuildableCollection)
+                  requiredBuildableCollection = null
+                }
+              }
+              return requiredBuildableCollectionBuilder!!
+            }
+
+            internal fun requiredBuildableCollection(`value`: ImmutableList<String>): Builder {
+              check(requiredBuildableCollectionBuilder == null) {
+                "Cannot set requiredBuildableCollection after calling requiredBuildableCollectionBuilder()"
+              }
+              this.requiredBuildableCollection = `value`
+              return this
+            }
 
             internal fun aBoolean(`value`: Boolean): Builder = apply { this.aBoolean = `value` }
 
@@ -375,8 +416,14 @@ class AutoValueKotlinExtensionTest {
 
             internal fun redactedString(`value`: String): Builder = apply { this.redactedString = `value` }
 
-            internal fun build(): Example =
-                Example(`value` = `value` ?: error("value == null"), nullableValue = nullableValue, collection = collection ?: error("collection == null"), nullableCollection = nullableCollection, aBoolean = aBoolean, aChar = aChar, aByte = aByte, aShort = aShort, aInt = aInt, aFloat = aFloat, aLong = aLong, aDouble = aDouble, redactedString = redactedString ?: error("redactedString == null"))
+            internal fun build(): Example {
+              if (requiredBuildableCollectionBuilder != null) {
+                this.requiredBuildableCollection = requiredBuildableCollectionBuilder!!.build()
+              } else if (this.requiredBuildableCollection == null) {
+                this.requiredBuildableCollection = ImmutableList.of()
+              }
+              return Example(`value` = `value` ?: error("value == null"), nullableValue = nullableValue, collection = collection ?: error("collection == null"), nullableCollection = nullableCollection, requiredBuildableCollection = requiredBuildableCollection ?: error("requiredBuildableCollection == null"), aBoolean = aBoolean, aChar = aChar, aByte = aByte, aShort = aShort, aInt = aInt, aFloat = aFloat, aLong = aLong, aDouble = aDouble, redactedString = redactedString ?: error("redactedString == null"))
+            }
 
             fun placeholder(): Nothing {
               // TODO This is a placeholder to mention the following methods need to be moved manually over:

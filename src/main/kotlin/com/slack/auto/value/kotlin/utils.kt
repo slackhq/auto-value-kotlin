@@ -101,6 +101,7 @@ internal const val MAX_PARAMS = 7
 internal val JSON_CN = Json::class.asClassName()
 internal val JSON_CLASS_CN = JsonClass::class.asClassName()
 
+@OptIn(DelicateKotlinPoetApi::class)
 @ExperimentalAvkApi
 public fun TypeMirror.asSafeTypeName(): TypeName {
   return asTypeName().copy(nullable = false).normalize()
@@ -135,7 +136,7 @@ public fun TypeName.normalize(): TypeName {
 @ExperimentalAvkApi
 public fun TypeElement.classAnnotations(): List<AnnotationSpec> {
   return annotationMirrors
-    .map { @Suppress("DEPRECATION") AnnotationSpec.get(it) }
+    .map { AnnotationSpec.get(it) }
     .filterNot { (it.typeName as ClassName).packageName == "com.google.auto.value" }
     .filterNot { (it.typeName as ClassName).simpleName == "Metadata" }
     .map { spec ->
@@ -175,7 +176,7 @@ public fun deprecatedAnnotation(message: String, replaceWith: String): Annotatio
     .build()
 }
 
-@Suppress("DEPRECATION", "SpreadOperator")
+@Suppress("SpreadOperator")
 @ExperimentalAvkApi
 public fun FunSpec.Companion.copyOf(method: ExecutableElement): FunSpec.Builder {
   var modifiers: Set<Modifier> = method.modifiers
@@ -216,7 +217,6 @@ public fun ParameterSpec.Companion.parametersWithNullabilityOf(
   method: ExecutableElement
 ): List<ParameterSpec> = method.parameters.map(ParameterSpec.Companion::getWithNullability)
 
-@Suppress("DEPRECATION")
 @ExperimentalAvkApi
 public fun ParameterSpec.Companion.getWithNullability(element: VariableElement): ParameterSpec {
   val name = element.simpleName.toString()
