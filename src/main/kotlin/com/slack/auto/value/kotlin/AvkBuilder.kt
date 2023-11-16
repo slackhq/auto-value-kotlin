@@ -43,7 +43,7 @@ public data class AvkBuilder(
   val classAnnotations: List<AnnotationSpec>
 ) {
 
-  @Suppress("LongMethod", "CyclomaticComplexMethod")
+  @Suppress("LongMethod", "CyclomaticComplexMethod", "NestedBlockDepth")
   public fun createType(messager: Messager): TypeSpec {
     val builder =
       TypeSpec.classBuilder(name).addModifiers(visibility).addAnnotations(classAnnotations)
