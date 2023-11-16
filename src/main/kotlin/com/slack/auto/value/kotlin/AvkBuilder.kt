@@ -43,7 +43,7 @@ public data class AvkBuilder(
   val classAnnotations: List<AnnotationSpec>
 ) {
 
-  @Suppress("LongMethod")
+  @Suppress("LongMethod", "CyclomaticComplexMethod")
   public fun createType(messager: Messager): TypeSpec {
     val builder =
       TypeSpec.classBuilder(name).addModifiers(visibility).addAnnotations(classAnnotations)
@@ -59,6 +59,7 @@ public data class AvkBuilder(
 
     val propsToCreateWith = mutableListOf<CodeBlock>()
 
+    @Suppress("DestructuringDeclarationWithTooManyEntries")
     for (builderProp in builderProps) {
       val (propName, type, setters, propertyBuilder) = builderProp
       // Add param to constructor
