@@ -23,6 +23,7 @@ import com.squareup.kotlinpoet.KModifier.INTERNAL
 import com.squareup.kotlinpoet.KModifier.PRIVATE
 import com.squareup.kotlinpoet.NOTHING
 import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
@@ -101,10 +102,10 @@ public data class AvkBuilder(
         val funSpec =
           propertyBuilder
             .toBuilder()
-            .beginControlFlow("if (%N == null)", builderProp)
-            .addStatement("%N = %T.builder()", builderProp, propSpec.type)
+            .beginControlFlow("if (%N == null)", builderPropSpec)
+            .addStatement("%N = %T.builder()", builderPropSpec, propSpec.type.copy(nullable = false))
             .endControlFlow()
-            .addStatement("return %N", builderProp)
+            .addStatement("return %N", builderPropSpec)
             .build()
         builder.addFunction(funSpec)
       }
@@ -152,10 +153,14 @@ public data class AvkBuilder(
             if (builderProp.builder != null) {
               beginControlFlow("if (%N != null)", builderProp.builderPropName)
               addStatement("this.%N = %N.build()", builderProp.name, builderProp.builderPropName)
-              if (!builderProp.type.isNullable) {
-                nextControlFlow("else if (this.%N == null)", builderProp.name)
-                addStatement("this.%N = %T.of()", builderProp.name, builderProp.type)
+              // property builders can never be nullable
+              nextControlFlow("else if (this.%N == null)", builderProp.name)
+              val rawType = if (builderProp.type is ParameterizedTypeName) {
+                builderProp.type.rawType
+              } else {
+                builderProp.type
               }
+              addStatement("this.%N = %T.of()", builderProp.name, rawType)
               endControlFlow()
             }
           }
