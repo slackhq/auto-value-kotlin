@@ -87,7 +87,10 @@ public data class AvkBuilder(
 
       if (propertyBuilder != null) {
         val builderPropSpec =
-          PropertySpec.builder(builderProp.builderPropName, propertyBuilder.returnType.copy(nullable = true))
+          PropertySpec.builder(
+              builderProp.builderPropName,
+              propertyBuilder.returnType.copy(nullable = true)
+            )
             .addModifiers(PRIVATE)
             .mutable()
             .initializer("null")
