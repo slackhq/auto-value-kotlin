@@ -458,9 +458,7 @@ private fun AvkBuilder.Companion.from(
         type,
         setters.mapTo(LinkedHashSet()) { FunSpec.copyOf(it).withDocsFrom(it, parseDocs).build() },
         builderContext.propertyBuilders()[prop]?.let { propertyBuilder ->
-          FunSpec.copyOf(propertyBuilder)
-            .withDocsFrom(propertyBuilder, parseDocs)
-            .build()
+          FunSpec.copyOf(propertyBuilder).withDocsFrom(propertyBuilder, parseDocs).build()
         }
       )
     }
@@ -472,8 +470,7 @@ private fun AvkBuilder.Companion.from(
     builderMethods += builderContext.buildMethod().get()
   }
 
-  val propertyBuilders = builderContext.propertyBuilders()
-    .values.toSet()
+  val propertyBuilders = builderContext.propertyBuilders().values.toSet()
 
   val remainingMethods =
     ElementFilter.methodsIn(builderContext.builderType().enclosedElements)

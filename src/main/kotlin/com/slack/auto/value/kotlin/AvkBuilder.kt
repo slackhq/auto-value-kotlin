@@ -28,7 +28,6 @@ import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.joinToCode
 import javax.annotation.processing.Messager
-import javax.lang.model.element.ExecutableElement
 import javax.tools.Diagnostic.Kind.WARNING
 
 @ExperimentalAvkApi
@@ -85,11 +84,12 @@ public data class AvkBuilder(
       builder.addProperty(propSpec)
 
       if (propertyBuilder != null) {
-        val builderPropSpec = PropertySpec.builder(builderProp.builderPropName, propertyBuilder.returnType)
-                  .addModifiers(PRIVATE)
-                  .mutable()
-                  .initializer("null")
-                  .build()
+        val builderPropSpec =
+          PropertySpec.builder(builderProp.builderPropName, propertyBuilder.returnType)
+            .addModifiers(PRIVATE)
+            .mutable()
+            .initializer("null")
+            .build()
         builder.addProperty(builderPropSpec)
 
         // Fill in the builder body
@@ -98,12 +98,14 @@ public data class AvkBuilder(
         //     reactionsBuilder$ = ImmutableList.builder();
         //   }
         //   return reactionsBuilder$;
-        val funSpec = propertyBuilder.toBuilder()
-                .beginControlFlow("if (%N == null)", builderProp)
-                .addStatement("%N = %T.builder()", builderProp, propSpec.type)
-                .endControlFlow()
-                .addStatement("return %N", builderProp)
-                .build()
+        val funSpec =
+          propertyBuilder
+            .toBuilder()
+            .beginControlFlow("if (%N == null)", builderProp)
+            .addStatement("%N = %T.builder()", builderProp, propSpec.type)
+            .endControlFlow()
+            .addStatement("return %N", builderProp)
+            .build()
         builder.addFunction(funSpec)
       }
 
@@ -158,11 +160,7 @@ public data class AvkBuilder(
             }
           }
         }
-        .addStatement(
-          "return·%T(%L)",
-          autoBuildFun.returnType,
-          propsToCreateWith.joinToCode(",·")
-        )
+        .addStatement("return·%T(%L)", autoBuildFun.returnType, propsToCreateWith.joinToCode(",·"))
         .build()
     )
 
