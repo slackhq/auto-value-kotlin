@@ -386,8 +386,13 @@ class AutoValueKotlinExtensionTest {
               return requiredBuildableCollectionBuilder
             }
 
-            internal fun requiredBuildableCollection(`value`: ImmutableList<String>): Builder =
-                apply { this.requiredBuildableCollection = `value` }
+            internal fun requiredBuildableCollection(`value`: ImmutableList<String>): Builder {
+              check(requiredBuildableCollectionBuilder == null) {
+                "Cannot set requiredBuildableCollection after calling requiredBuildableCollectionBuilder()"
+              }
+              this.requiredBuildableCollection = `value`
+              return this
+            }
 
             internal fun aBoolean(`value`: Boolean): Builder = apply { this.aBoolean = `value` }
 

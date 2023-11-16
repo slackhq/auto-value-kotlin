@@ -105,12 +105,12 @@ public data class AvkBuilder(
             .toBuilder()
             .beginControlFlow("if (%N == null)", builderPropSpec)
             .addStatement(
-              "%N = %T.builder()",
+              "%N·= %T.builder()",
               builderPropSpec,
               propSpec.type.copy(nullable = false)
             )
             .endControlFlow()
-            .addStatement("return %N", builderPropSpec)
+            .addStatement("return·%N", builderPropSpec)
             .build()
         builder.addFunction(funSpec)
       }
@@ -125,14 +125,32 @@ public data class AvkBuilder(
       propsToCreateWith += CodeBlock.of("%1N·=·%1N%2L", propSpec, extraCheck)
 
       for (setter in setters) {
+        // TODO if there's a builder, check the builder is null first
         if (setter.parameters.size != 1) {
           messager.printMessage(WARNING, "Setter with surprising params: ${setter.name}")
         }
+        val setterBlock = CodeBlock.of("this.%N·= %N", propSpec, setter.parameters[0])
         val setterSpec =
           setter
             .toBuilder()
-            // Assume this is a normal setter
-            .addStatement("return·apply·{·this.%N·= %N }", propSpec, setter.parameters[0])
+            .apply {
+              if (propertyBuilder != null) {
+                // Need to check if the builder is null
+                // if (reactionsBuilder$ != null) {
+                //   throw new IllegalStateException("Cannot set reactions after calling reactionsBuilder()");
+                // }
+                beginControlFlow("check(%N == null)", builderProp.builderPropName)
+                addStatement(
+                  "%S",
+                  "Cannot set ${propSpec.name} after calling ${builderProp.builderPropName}()")
+                endControlFlow()
+                addStatement("%L", setterBlock)
+                addStatement("return·this")
+              } else {
+                // Assume this is a normal setter
+                addStatement("return·apply·{·%L }", setterBlock)
+              }
+            }
             .build()
         builder.addFunction(setterSpec)
       }
