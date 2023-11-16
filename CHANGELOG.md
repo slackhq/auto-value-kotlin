@@ -1,6 +1,18 @@
 Changelog
 =========
 
+1.2.0
+-----
+
+_2023-11-16_
+
+- **New:** Support for property builders.
+- Update to Kotlin `1.9.20`.
+- Update to AutoValue `1.10.4`.
+- Update to KotlinPoet `1.14.2`.
+- Update to Moshi `1.15.0`.
+- Update to Okio `3.6.0`.
+
 1.1.3
 -----
 
