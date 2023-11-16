@@ -137,12 +137,14 @@ public data class AvkBuilder(
               if (propertyBuilder != null) {
                 // Need to check if the builder is null
                 // if (reactionsBuilder$ != null) {
-                //   throw new IllegalStateException("Cannot set reactions after calling reactionsBuilder()");
+                //   throw new IllegalStateException("Cannot set reactions after calling
+                // reactionsBuilder()");
                 // }
                 beginControlFlow("check(%N == null)", builderProp.builderPropName)
                 addStatement(
                   "%S",
-                  "Cannot set ${propSpec.name} after calling ${builderProp.builderPropName}()")
+                  "Cannot set ${propSpec.name} after calling ${builderProp.builderPropName}()"
+                )
                 endControlFlow()
                 addStatement("%L", setterBlock)
                 addStatement("return·this")
