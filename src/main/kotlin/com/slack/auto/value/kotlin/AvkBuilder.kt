@@ -100,15 +100,41 @@ public data class AvkBuilder(
         //     reactionsBuilder$ = ImmutableList.builder();
         //   }
         //   return reactionsBuilder$;
+        val rawType =
+          if (propSpec.type is ParameterizedTypeName) {
+            (propSpec.type as ParameterizedTypeName).rawType
+          } else {
+            propSpec.type
+          }
+        val nonNullType = rawType.copy(nullable = false)
         val funSpec =
           propertyBuilder
             .toBuilder()
             .beginControlFlow("if (%N == null)", builderPropSpec)
-            .addStatement(
-              "%N·= %T.builder()",
-              builderPropSpec,
-              propSpec.type.copy(nullable = false)
-            )
+            .apply {
+              addStatement("%N·= %T.builder()", builderPropSpec, nonNullType)
+              if (setters.isNotEmpty()) {
+                // Add the previous set value if one is present
+                // if (files == null) {
+                //  filesBuilder$ = ImmutableList.builder();
+                // } else {
+                //  filesBuilder$ = ImmutableList.builder();
+                //  filesBuilder$.addAll(files);
+                //  files = null;
+                // }
+                beginControlFlow("if (%N != null)", propSpec)
+                // TODO hacky but works for our cases
+                val addMethod =
+                  if (type.toString().contains("Map")) {
+                    "putAll"
+                  } else {
+                    "addAll"
+                  }
+                addStatement("%N.$addMethod(%N)", builderPropSpec, propSpec)
+                addStatement("%N = null", propSpec)
+                endControlFlow()
+              }
+            }
             .endControlFlow()
             .addStatement("return·%N", builderPropSpec)
             .build()
