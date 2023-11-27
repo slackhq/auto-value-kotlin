@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 import com.diffplug.spotless.LineEnding
-import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import io.gitlab.arturbosch.detekt.Detekt
 import java.net.URI
 import org.jetbrains.dokka.gradle.DokkaTask
