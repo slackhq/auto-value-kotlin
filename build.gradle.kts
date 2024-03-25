@@ -22,7 +22,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   kotlin("jvm") version "1.9.23"
-  id("org.jetbrains.dokka") version "1.9.10"
+  id("org.jetbrains.dokka") version "1.9.20"
   id("com.google.devtools.ksp") version "1.9.23-1.0.19"
   id("com.diffplug.spotless") version "6.25.0"
   id("com.vanniktech.maven.publish") version "0.28.0"
