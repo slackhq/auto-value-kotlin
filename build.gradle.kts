@@ -109,7 +109,7 @@ tasks.withType<Test>().configureEach {
 val moshiVersion = "1.15.1"
 
 dependencies {
-  ksp("dev.zacsweers.autoservice:auto-service-ksp:1.1.0")
+  ksp("dev.zacsweers.autoservice:auto-service-ksp:1.2.0")
   implementation("com.squareup.moshi:moshi:$moshiVersion")
   implementation("com.google.auto.service:auto-service:1.1.1")
   implementation("com.squareup:kotlinpoet:1.16.0")
