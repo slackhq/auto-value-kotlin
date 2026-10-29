@@ -1,3 +1,5 @@
+This project is archived and no longer maintained. We won't publish any more releases, fix bugs, or review PRs.
+
 AutoValue Kotlin
 ================
 
